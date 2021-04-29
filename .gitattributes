@@ -1,0 +1,2 @@
+*.h	filter=convert-cr
+*.cp	filter=convert-cr

@@ -38,6 +38,7 @@ public:
 protected:
 	void	InitializeBuffer(UInt8 width, UInt8 height);
 	
+	Boolean mDrawRenderPaneBoundingBoxes;
 	UInt8	mBufferWidth;
 	UInt8	mBufferHeight;
 	BlockKind::Type*	mBuffer;

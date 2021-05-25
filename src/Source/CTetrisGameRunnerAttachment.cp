@@ -135,7 +135,7 @@ CTetrisGameRunnerAttachment::NewGame() {
 		delete mTetrisGame;
 	}
 
-	mTetrisGame = new CTetrisGame(0);
+	mTetrisGame = new CTetrisGame();
 	mTimeElapsedOnTick = 0;
 	mGameActive = TRUE;
 	StartRepeating();

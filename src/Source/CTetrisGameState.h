@@ -19,15 +19,24 @@ public:
 							~CTetrisGameState();
 				
 							// Tracks the current game score
-				UInt32		mScore;
+				SInt32		mScore;
+				
+							// Remembers the starting level for scoring purposes
+				SInt32		mStartingLevel;
 				
 							// Tracks the current game level
-				UInt32		mLevel;
+				SInt32		mLevel;
 				
 							// Tracks total lines cleared this game
-				UInt32		mLinesCleared;
+				SInt32		mLinesCleared;
 				
-				UInt32		mLinesRemainingOnLevel;
+							// Track lines cleared this level for determining when to increase level
+				SInt32		mLinesClearedThisLevel;
+							
+							// The number of continuous soft drop lines dropped before collision
+				SInt32		mContinuousSoftDropLines;
+				SInt32		mSoftDropLinesThisTurn;
+				SInt32		mHardDropLinesThisTurn;
 				
 							// If true, the game is over and will not respond to input
 				Boolean		mGameOver;

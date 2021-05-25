@@ -5,19 +5,22 @@
 #include "CTetrisGame.h"
 
 CTetrisGame::CTetrisGame() :
-	mState()
+	mState(),
+	mRuleset()
 {
 	// Setup state
-	mState.mLevel = 0;
+	mState.mLevel = mRuleset.mStartingLevel;
 	mState.mGameOver = FALSE;
 	StartNextTurn();
 };
 
-CTetrisGame::CTetrisGame(UInt32 startLevel) :
+CTetrisGame::CTetrisGame(CTetrisGameRuleset ruleset) :
 	mState()
 {
 	// Setup state
-	mState.mLevel = startLevel;
+	mRuleset = ruleset;
+	mState.mStartingLevel = mRuleset.mStartingLevel;
+	mState.mLevel = mRuleset.mStartingLevel;
 	mState.mGameOver = FALSE;
 	StartNextTurn();
 }
@@ -145,10 +148,11 @@ CTetrisGame::DoPieceSoftDrop() {
 
 	if(!DoDrop()) {
 		
-		// TODO: Add to soft-drop counter for scoring purposes.
-		//       Many game rulesets reward points per soft-drop line.
+		// Soft-drop counter for scoring purposes.
+		// Many game rulesets reward points per soft-drop line.
 		
-		// softDropThisTurn++;
+		mState.mContinuousSoftDropLines++;
+		mState.mSoftDropLinesThisTurn++;
 	}
 	
 	return TRUE;
@@ -164,10 +168,10 @@ CTetrisGame::DoPieceHardDrop() {
 	// Move the piece down until it collides with something.
 	
 	while(!DoDrop() && mState.mCurrentPieceYPosition >= 0) {	
-		// TODO: Add to hard-drop counter for scoring purposes.
-		//       Many game rulesets reward points per hard-drop line
+		// Hard-drop counter for scoring purposes.
+		// Many game rulesets reward points per hard-drop line
 			
-		// hardDropThisTurnn++;
+		mState.mHardDropLinesThisTurn++;
 	}
 	
 	return TRUE;
@@ -271,6 +275,9 @@ CTetrisGame::StartNewTurn(PieceKind::Type pieceKind, Boolean resetHold) {
 	mState.mCurrentPieceOrientation = PieceOrientation::Down;
 	mState.mCurrentPieceXPosition = 3;
 	mState.mCurrentPieceYPosition = 20;
+	mState.mContinuousSoftDropLines = 0;
+	mState.mSoftDropLinesThisTurn = 0;
+	mState.mHardDropLinesThisTurn = 0;
 	
 	if(resetHold) {
 		mState.mHoldPieceTriggeredThisTurn = FALSE;
@@ -297,9 +304,15 @@ CTetrisGame::DoDrop() {
 	Boolean collision = DropAndStampPiece();
 	
 	if(collision) {
-		UInt8 rowsCleared = DoRowClears();
+		// Score continuous soft drop
+		// BPS: Number of continuous lines cleared + 1
+		mState.mScore += mState.mContinuousSoftDropLines > 0 ? mState.mContinuousSoftDropLines + 1 : 0;
+
+		// Score hard drop
+		// TODO: Currently hard drop is scored the same as soft drop. Is this always true?
+		mState.mScore += mState.mHardDropLinesThisTurn > 0 ? mState.mHardDropLinesThisTurn + 1 : 0;
 	
-		// TODO: Score drop?
+		UInt8 rowsCleared = DoRowClears();
 		
 		if(rowsCleared == 0) {
 			StartNextTurn();
@@ -455,9 +468,6 @@ CTetrisGame::ProcessFlaggedToClearBlocks() {
 // Returns TRUE if the game is still running, FALSE if GAME OVER.				
 Boolean
 CTetrisGame::DoGameTick() {
-	// TODO: Implement animation frames.
-	// TODO: Disable the piece drop during animation frames.
-	
 	if(mState.mGameOver) {
 		return FALSE;
 	}
@@ -470,6 +480,11 @@ CTetrisGame::DoGameTick() {
 			StartNextTurn();
 		}
 		else {
+			// The user has not performed a manual drop within a tick time,
+			// reset the continuous soft drop counter
+			mState.mContinuousSoftDropLines = 0;
+			
+			// Do a gravity drop.
 			DoDrop();
 		}
 	}
@@ -530,17 +545,29 @@ CTetrisGame::GetCurrentTickDelay() {
 }
 
 void
-CTetrisGame::ScoreRowsCleared(UInt8 linesCleared) {
+CTetrisGame::ScoreRowsCleared(SInt32 linesCleared) {
 	// Update total lines cleared
 	mState.mLinesCleared += linesCleared;
 	
 	// Update lines left on the current level
-	mState.mLinesRemainingOnLevel -= linesCleared;
+	mState.mLinesClearedThisLevel += linesCleared;
 	
 	// TODO: Allow points and level progression to be altered by ruleset
 	
 	// Check if the current level should advance
-		// TODO
+	// Note: We currently do this *before* scoring, which will award points as if it's the
+	//       *next* level. This matches NES behaviour, but may want to revise this in future.
+	//       Maybe make it configurable with ruleset?
+	
+	// GB formula:
+	// Lines = startLevel * 10 + 10, then every 10 lines
+	SInt32 linesThisLevel = (mState.mStartingLevel == mState.mLevel)
+		? (mState.mStartingLevel * 10 + 10) : 10;
+	
+	if(mState.mLinesClearedThisLevel >= linesThisLevel) {
+		mState.mLinesClearedThisLevel -= linesThisLevel;
+		mState.mLevel++;
+	}
 	
 	// Reward points based on the number of lines cleared
 	
@@ -567,16 +594,18 @@ CTetrisGame::ScoreRowsCleared(UInt8 linesCleared) {
 	linePoints *= (mState.mLevel + 1);
 	
 	mState.mScore += linePoints;
+	
+	// Note: Potentially move level advance down here.
 }
 				
 void
-CTetrisGame::ScoreHardDrop(UInt8 linesDropped) {
+CTetrisGame::ScoreHardDrop(SInt32 linesDropped) {
 	// For now, treat these like a soft drop (since Nintendo scoring system does not recognise hard drops)
 	ScoreSoftDrop(linesDropped);
 }
 				
 void
-CTetrisGame::ScoreSoftDrop(UInt8 linesDropped) {
+CTetrisGame::ScoreSoftDrop(SInt32 linesDropped) {
 	// Original Nintendo Scoring System
 	// One point for each line continuously soft-dropped.
 	
@@ -707,4 +736,9 @@ CTetrisGame::RenderBagPiece(UInt8 index, BlockKind::Type* blockBuffer, UInt8 buf
 CTetrisGameState*	
 CTetrisGame::GetState() {
 	return &mState;
+}
+
+CTetrisGameRuleset*
+CTetrisGame::GetRuleset() {
+	return &mRuleset;
 }

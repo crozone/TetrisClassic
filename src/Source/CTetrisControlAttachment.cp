@@ -38,10 +38,10 @@ CTetrisControlAttachment::ListenToMessage(MessageT inMessage, void *ioParam) {
 		if(kind == 1) {
 			// Game over
 			if(game->IsGameOver()) {
-				
+				pane->SetVisible(TRUE);
 			}
 			else {
-			
+				pane->SetVisible(FALSE);
 			}
 		}
 		else if(kind == 2) {

@@ -4,6 +4,7 @@
 
 #include "BlockKind.h"
 #include "CTetrisGameState.h"
+#include "CTetrisGameRuleset.h"
 
 //
 // TetrisGame handles all Tetris game logic and state
@@ -14,7 +15,7 @@ class CTetrisGame
 public:
 							CTetrisGame();
 
-							CTetrisGame(UInt32 startLevel);
+							CTetrisGame(CTetrisGameRuleset ruleset);
 
 							~CTetrisGame();
 	
@@ -51,6 +52,8 @@ public:
 				void		RenderBagPiece(UInt8 index, BlockKind::Type* blockBuffer, UInt8 bufferWidth, UInt8 bufferHeight);
 				
 				CTetrisGameState*	GetState();
+				
+				CTetrisGameRuleset*	GetRuleset();
 
 protected:
 				void		RenderSingleDisplayPiece(PieceKind::Type piece, BlockKind::Type* blockBuffer, UInt8 bufferWidth, UInt8 bufferHeight);
@@ -73,15 +76,17 @@ protected:
 				
 				Boolean		IsAcceptingInput();
 				
-				void		ScoreRowsCleared(UInt8 linesCleared);
+				void		ScoreRowsCleared(SInt32 linesCleared);
 				
-				void		ScoreHardDrop(UInt8 linesDropped);
+				void		ScoreHardDrop(SInt32 linesDropped);
 				
-				void		ScoreSoftDrop(UInt8 linesDropped);
+				void		ScoreSoftDrop(SInt32 linesDropped);
 				
 				void		ScoreNaturalDrop();
 
 				CTetrisGameState mState;
+				
+				CTetrisGameRuleset mRuleset;
 };
 
 #endif // _H_CTetrisGame

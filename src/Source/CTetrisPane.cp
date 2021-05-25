@@ -9,6 +9,7 @@ CTetrisPane::CTetrisPane()
 
 CTetrisPane::CTetrisPane(const SPaneInfo &inPaneInfo)
 : LPane::LPane(inPaneInfo),
+	mDrawRenderPaneBoundingBoxes(FALSE),
 	mBuffer(NULL),
 	mBufferWidth(0),
 	mBufferHeight(0)
@@ -18,6 +19,7 @@ CTetrisPane::CTetrisPane(const SPaneInfo &inPaneInfo)
 
 CTetrisPane::CTetrisPane(LStream *inStream)
 : LPane::LPane(inStream),
+	mDrawRenderPaneBoundingBoxes(FALSE),
 	mBuffer(NULL),
 	mBufferWidth(0),
 	mBufferHeight(0)
@@ -92,12 +94,14 @@ CTetrisPane::DrawSelf() {
 	
 	::PenNormal();
 	
-	// Draw temp background cross
-	::ForeColor(blackColor);
-	::MoveTo(gameRect.left, gameRect.top);
-	::LineTo(gameRect.right, gameRect.bottom);
-	::MoveTo(gameRect.right, gameRect.top);
-	::LineTo(gameRect.left, gameRect.bottom);
+	if(mDrawRenderPaneBoundingBoxes) {
+		// Draw debug background cross
+		::ForeColor(blackColor);
+		::MoveTo(gameRect.left, gameRect.top);
+		::LineTo(gameRect.right, gameRect.bottom);
+		::MoveTo(gameRect.right, gameRect.top);
+		::LineTo(gameRect.left, gameRect.bottom);
+	}
 		
 	
 	Rect basePieceRect;
@@ -226,6 +230,7 @@ CTetrisPane::DrawSelf() {
 		}
 	}
 	
+	
 	::ForeColor(blackColor);
 	
 	Rect boarderRect = gameRect;
@@ -233,9 +238,11 @@ CTetrisPane::DrawSelf() {
 	
 	// Draws game boarder
 	::MacFrameRect(&boarderRect);
-	
-	// Draws frame boarder
-	::MacFrameRect(&frameRect);
+		
+	if(mDrawRenderPaneBoundingBoxes) {
+		// Draws frame boarder
+		::MacFrameRect(&frameRect);
+	}
 }
 
 // LListener
@@ -246,6 +253,8 @@ CTetrisPane::ListenToMessage(MessageT inMessage, void *ioParam) {
 		// ioParam is a TetrisGame
 		CTetrisGame* game = static_cast<CTetrisGame*>(ioParam);
 		ThrowIfNil_(game);
+		
+		mDrawRenderPaneBoundingBoxes = game->GetRuleset()->mDrawRenderPaneBoundingBoxes;
 		
 		// TODO: Make this a proper enum
 		SInt32 tetrisPaneKind = this->GetUserCon();

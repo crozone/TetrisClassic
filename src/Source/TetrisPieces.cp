@@ -16,7 +16,8 @@ TetrisPieces::GetPieceFromIndex(UInt8 pieceIndex) {
 
 PieceKind::Type
 TetrisPieces::GetPieceFromBlock(BlockKind::Type blockKind) {
-	return static_cast<PieceKind::Type>(blockKind & BlockKind::PieceKindMask);
+	return static_cast<PieceKind::Type>((blockKind & BlockKind::PieceKindMask));
+		//>> BlockKind::PieceKindShift);
 }
 
 UInt8
@@ -37,12 +38,59 @@ TetrisPieces::GetBlockFromPiece(
 		);	
 }
 
-Boolean TetrisPieces::IsBlockCollidable(BlockKind::Type blockKind) {
+Boolean
+TetrisPieces::IsBlockCollidable(BlockKind::Type blockKind) {
 	return (blockKind & BlockKind::CollidableFlag) > 0;
 }
 
-Boolean TetrisPieces::IsBlockGhost(BlockKind::Type blockKind) {
+void
+TetrisPieces::SetBlockCollidable(BlockKind::Type &blockKind, Boolean collidable) {
+	blockKind = static_cast<BlockKind::Type>(
+		(blockKind & ~BlockKind::CollidableFlag)
+		| (collidable ? BlockKind::CollidableFlag : 0)
+		);
+}
+
+Boolean
+TetrisPieces::IsBlockGhost(BlockKind::Type blockKind) {
 	return (blockKind & BlockKind::GhostFlag) > 0;
+}
+
+void
+TetrisPieces::SetBlockGhost(BlockKind::Type &blockKind, Boolean ghost) {
+	blockKind = static_cast<BlockKind::Type>(
+		(blockKind & ~BlockKind::GhostFlag)
+		| (ghost ? BlockKind::GhostFlag : 0)
+		);
+}
+
+Boolean
+TetrisPieces::IsFlaggedForClear(BlockKind::Type blockKind) {
+	return (blockKind & BlockKind::FlaggedForClear) > 0;
+}
+
+void
+TetrisPieces::SetFlaggedForClear(BlockKind::Type &blockKind, Boolean clear) {
+	blockKind = static_cast<BlockKind::Type>(
+		(blockKind & ~BlockKind::FlaggedForClear)
+		| (clear ? BlockKind::FlaggedForClear : 0)
+		);
+}
+
+UInt8
+TetrisPieces::GetClearCountdown(BlockKind::Type blockKind) {
+	return static_cast<UInt8>((blockKind & BlockKind::ClearCountdownMask)
+		>> BlockKind::ClearCountdownShift);
+}
+
+void
+TetrisPieces::SetClearCountdown(BlockKind::Type &blockKind, UInt8 value) {
+	// Prepare value for ORing with blockKind
+	UInt32 valueMask = (value << BlockKind::ClearCountdownShift) & BlockKind::ClearCountdownMask;
+	
+	// Clear current blockKind countdown value and OR with new value
+	blockKind = static_cast<BlockKind::Type>(
+		(blockKind & ~BlockKind::ClearCountdownMask) | valueMask);
 }
 
 void

@@ -254,6 +254,14 @@ CTetrisGame::StartNextTurn() {
 //
 Boolean
 CTetrisGame::DoDrop() {
+	Boolean collision = DropAndStampPiece();
+	CheckForRowClears();
+	
+	return collision;
+}
+
+Boolean
+CTetrisGame::DropAndStampPiece() {
 	// Check if piece is already colliding with the board.
 	// This indicates GAME OVER.
 	
@@ -325,6 +333,36 @@ CTetrisGame::DoDrop() {
 	}
 }
 
+void
+CTetrisGame::CheckForRowClears() {
+	for(int j = 0; j < 20; j++) {
+		Boolean rowIsComplete = TRUE;
+		for(int i = 0; i < 10; i++) {
+			// If the entire row is collidable, it is considered cleared
+			if(!TetrisPieces::IsBlockCollidable(mState.mBoardState[j][i])) {
+				rowIsComplete = FALSE;
+				break;
+			}
+		}
+		
+		if(rowIsComplete) {
+			// Clear the row
+			for(int i = 0; i < 10; i++) {
+				// Clear the collidable flag
+				TetrisPieces::SetBlockCollidable(mState.mBoardState[j][i], FALSE);
+				
+				// Set the clear flag and ticks
+				TetrisPieces::SetFlaggedForClear(mState.mBoardState[j][i], TRUE);
+				
+				// TODO: Play with this value depending on row/column
+				// to achieve fancy clear animations
+				TetrisPieces::SetClearCountdown(mState.mBoardState[j][i], 8);
+			}
+			
+		}
+	}
+}
+
 
 // Performs a game tick.
 //
@@ -338,7 +376,35 @@ CTetrisGame::DoGameTick() {
 		return FALSE;
 	}
 	
-	DoDrop();
+	// TODO: Check all blocks for animation flags and process them before
+	// doing any DoDrop()
+	
+	Boolean skipDrop = FALSE;
+	
+	for(int j = 20 - 1; j >= 0; j--) {
+		for(int i = 0; i < 10; i++) {
+			// Process any blocks that are flagged for clear
+			if(TetrisPieces::IsFlaggedForClear(mState.mBoardState[j][i])) {
+				skipDrop = TRUE;
+				UInt8 clearTicksLeft = TetrisPieces::GetClearCountdown(mState.mBoardState[j][i]);
+				
+				if(clearTicksLeft > 0) {
+					TetrisPieces::SetClearCountdown(mState.mBoardState[j][i], clearTicksLeft - 1);
+				}
+				else {
+					// Clear the block. Move every block above this block down one.
+					for(int k = j; k < (20 - 1); k++) {
+						mState.mBoardState[k][i] = mState.mBoardState[k + 1][i];
+					}
+					mState.mBoardState[20 - 1][i] = BlockKind::None;
+				}
+			}
+		}
+	}
+	
+	if(!skipDrop) {
+		DoDrop();
+	}
 	
 	return TRUE;
 }

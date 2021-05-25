@@ -234,6 +234,12 @@ CTetrisGameRunnerAttachment::HandleKeyPress( const EventRecord& inKeyEvent ) {
 			mTetrisGame.DoPieceHold();
 			GameStateChanged();
 			return TRUE;
+		case 'n':
+		case 'N':
+			// For testing: Do a game tick manually
+			mTetrisGame.DoGameTick();
+			GameStateChanged();
+			return TRUE;
 	}
 	
 	return FALSE;

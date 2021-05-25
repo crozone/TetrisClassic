@@ -54,6 +54,10 @@ protected:
 				void		UpdatePieceBag();
 				
 				Boolean		DoDrop();
+				
+				Boolean		DropAndStampPiece();
+				
+				void		CheckForRowClears();
 
 				CTetrisGameState mState;
 };

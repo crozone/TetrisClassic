@@ -24,8 +24,20 @@ public:
 				Boolean ghost);
 
 	static	Boolean IsBlockCollidable(BlockKind::Type blockKind);
+	
+	static	void	SetBlockCollidable(BlockKind::Type &blockKind, Boolean collidable);
 
 	static	Boolean	IsBlockGhost(BlockKind::Type blockKind);
+	
+	static	void	SetBlockGhost(BlockKind::Type &blockKind, Boolean ghost);
+	
+	static	Boolean	IsFlaggedForClear(BlockKind::Type blockKind);
+	
+	static	void	SetFlaggedForClear(BlockKind::Type &blockKind, Boolean clear);
+	
+	static	UInt8	GetClearCountdown(BlockKind::Type blockKind);
+	
+	static	void	SetClearCountdown(BlockKind::Type &blockKind, UInt8 value);
 	
 	static	void	RenderPiece(
 				PieceKind::Type pieceKind,

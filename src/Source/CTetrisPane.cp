@@ -87,6 +87,7 @@ CTetrisPane::DrawSelf() {
 			PieceKind::Type pieceKind = TetrisPieces::GetPieceFromBlock(currentBlock);
 			Boolean blockCollidable = TetrisPieces::IsBlockCollidable(currentBlock);
 			Boolean blockGhost = TetrisPieces::IsBlockGhost(currentBlock);
+			Boolean flaggedForClear = TetrisPieces::IsFlaggedForClear(currentBlock);
 		
 			if(pieceKind != PieceKind::None) {
 				// Draw a single piece rectangle
@@ -184,6 +185,12 @@ CTetrisPane::DrawSelf() {
 					::ForeColor(basicColour);
 					::MacFrameRect(&currentPieceRect);
 				}
+				
+				// TODO: Change based on current tick
+				if(flaggedForClear) {
+					::ForeColor(blackColor);
+					::PaintRect(&currentPieceRect);
+				}
 			}
 		}
 	}
@@ -202,7 +209,7 @@ CTetrisPane::DrawSelf() {
 
 // LListener
 void
-CTetrisPane::ListenToMessage( MessageT inMessage, void *ioParam ) {
+CTetrisPane::ListenToMessage(MessageT inMessage, void *ioParam) {
 	if(inMessage == 2000) {
 		// ioParam is a TetrisGame
 		CTetrisGame* game = static_cast<CTetrisGame*>(ioParam);

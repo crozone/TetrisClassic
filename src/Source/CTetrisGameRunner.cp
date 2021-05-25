@@ -28,8 +28,8 @@ CTetrisGameRunner::ResumeGame() {
 void
 CTetrisGameRunner::SpendTime(const EventRecord& inMacEvent) {
 	UInt32 currentTime = inMacEvent.when;
-	mLastUpdateTime = currentTime;
 	UInt32 timeDelta = currentTime - mLastUpdateTime;
+	mLastUpdateTime = currentTime;
 	
 	if(!mGameActive) {
 		return;
@@ -45,8 +45,17 @@ CTetrisGameRunner::SpendTime(const EventRecord& inMacEvent) {
 	mTimeRemainingOnTick -= timeDelta;
 	
 	while(mTimeRemainingOnTick < 0) {
-		mTimeRemainingOnTick += mTetrisGame.GetCurrentTickDelay();
-		mTetrisGame.DoGameTick();
+		SInt32 tickDelay = mTetrisGame.GetCurrentTickDelay();
+		
+		if(tickDelay >= 0) {
+			mTimeRemainingOnTick += tickDelay;
+			mTetrisGame.DoGameTick();
+		}
+		else {
+			// Infinite time, we shouldn't call game tick
+			mTimeRemainingOnTick = 0;
+			break;
+		}
 		
 	}
 }

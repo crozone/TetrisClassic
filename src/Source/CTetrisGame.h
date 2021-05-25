@@ -34,7 +34,7 @@ public:
 				
 				Boolean		DoGameTick();
 				
-				UInt32		GetCurrentTickDelay();
+				SInt32		GetCurrentTickDelay();
 				
 				void		RenderBoard(BlockKind::Type blockBuffer[20][10]);
 				

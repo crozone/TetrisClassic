@@ -343,10 +343,15 @@ CTetrisGame::DoGameTick() {
 	return TRUE;
 }
 				
-UInt32
+SInt32
 CTetrisGame::GetCurrentTickDelay() {
 	// TODO: Move this into an array and actually finish it
-	if(mState.mLevel <= 0) {
+	
+	if(mState.mLevel < 0) {
+		// Infinite timeout
+		return -1;
+	}
+	else if(mState.mLevel == 0) {
 		return 53 * 1000 / 60;
 	}
 	else if(mState.mLevel == 1) {

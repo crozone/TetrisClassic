@@ -25,7 +25,7 @@ void
 CQuitOnCloseAttachment::ExecuteSelf(
 	MessageT	 /*inMessage*/,
 	void*		/* ioParam */)
-{		
+{
 	// Send the Quit command
 	mCommanderToQuit->ProcessCommand(cmd_Quit, nil);
 }

@@ -21,6 +21,7 @@
 #include <UAttachments.h>
 
 #include "CQuitOnCloseAttachment.h"
+#include "CTetrisGameRunnerAttachment.h"
 #include "CTetrisPane.h"
 #include "Random.h"
 
@@ -302,6 +303,7 @@ CBasicApp::RegisterClasses()
 	RegisterClass_(LCaption);
 	RegisterClass_(LStdButton);
 	RegisterClass_(CQuitOnCloseAttachment);
+	RegisterClass_(CTetrisGameRunnerAttachment);
 	RegisterClass_(CTetrisPane);
 	RegisterClass_(LOffscreenView);
 	RegisterClass_(LActiveScroller);

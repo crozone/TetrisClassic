@@ -27,7 +27,7 @@ struct BlockKind {
 		GhostFlag			=	1 << 4,				// 0000000000010000
 		FlaggedForClear		=	1 << 5,				// 0000000000100000
 		ClearCountdownShift	=	6,				// >> 6
-		ClearCountdownMask	=	15 << ClearCountdownShift	// 0000001111000000
+		ClearCountdownMask	=	7 << ClearCountdownShift	// 0000000111000000
 		
 	};
 };

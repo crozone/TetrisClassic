@@ -57,7 +57,7 @@ protected:
 				
 				Boolean		DropAndStampPiece();
 				
-				void		CheckForRowClears();
+				UInt8		DoRowClears();
 
 				CTetrisGameState mState;
 };

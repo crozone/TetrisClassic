@@ -25,6 +25,10 @@ CTetrisGame::~CTetrisGame() {
 
 Boolean
 CTetrisGame::DoPieceLeft() {
+	if(mState.mGameOver) {
+		return FALSE;
+	}
+
 	// Move the piece left if it won't collide with anything
 	if(!TetrisPieces::CheckCollisionWithBoard(
 		mState.mCurrentPiece,
@@ -44,6 +48,10 @@ CTetrisGame::DoPieceLeft() {
 				
 Boolean
 CTetrisGame::DoPieceRight() {
+	if(mState.mGameOver) {
+		return FALSE;
+	}
+
 	// Move the piece right if it won't collide with anything
 	if(!TetrisPieces::CheckCollisionWithBoard(
 		mState.mCurrentPiece,
@@ -63,6 +71,10 @@ CTetrisGame::DoPieceRight() {
 
 Boolean
 CTetrisGame::DoPieceRotateCW() {
+	if(mState.mGameOver) {
+		return FALSE;
+	}
+	
 	// Rotate the piece clockwise if it won't collide with anything
 	
 	PieceOrientation::Type orientation = PieceOrientation::RotateCW(mState.mCurrentPieceOrientation);
@@ -85,6 +97,10 @@ CTetrisGame::DoPieceRotateCW() {
 				
 Boolean
 CTetrisGame::DoPieceRotateCCW() {
+	if(mState.mGameOver) {
+		return FALSE;
+	}
+
 	// Rotate the piece counter-clockwise if it won't collide with anything
 	
 	PieceOrientation::Type orientation = PieceOrientation::RotateCCW(mState.mCurrentPieceOrientation);
@@ -108,6 +124,10 @@ CTetrisGame::DoPieceRotateCCW() {
 // Move the piece down one				
 Boolean
 CTetrisGame::DoPieceSoftDrop() {
+	if(mState.mGameOver) {
+		return FALSE;
+	}
+
 	if(!DoDrop()) {
 		
 		// TODO: Add to soft-drop counter for scoring purposes.
@@ -125,19 +145,20 @@ CTetrisGame::DoPieceSoftDrop() {
 // Drop the piece until it hits the board
 Boolean
 CTetrisGame::DoPieceHardDrop() {
-	Boolean boardUpdated = FALSE;
+	if(mState.mGameOver) {
+		return FALSE;
+	}
+
 	// Move the piece down until it collides with something.
 	
-	while(!DoDrop()) {	
+	while(!DoDrop() && mState.mCurrentPieceYPosition >= 0) {	
 		// TODO: Add to hard-drop counter for scoring purposes.
 		//       Many game rulesets reward points per hard-drop line
 			
 		// hardDropThisTurnn++;
-		
-		boardUpdated = TRUE;
 	}
 	
-	return boardUpdated;
+	return TRUE;
 }
 
 
@@ -145,6 +166,10 @@ CTetrisGame::DoPieceHardDrop() {
 // Returns TRUE if successful, FALSE if hold was already used this turn.		
 Boolean
 CTetrisGame::DoPieceHold() {
+	if(mState.mGameOver) {
+		return FALSE;
+	}
+
 	if(!mState.mHoldPieceTriggeredThisTurn) {
 		mState.mHoldPieceTriggeredThisTurn = TRUE;
 		
@@ -211,7 +236,6 @@ CTetrisGame::GetNextPiece() {
 
 void
 CTetrisGame::UpdatePieceBag() {
-
 	// While the piece bag has space for another piece set,
 	// generate random piece sets into the piece bag.
 	
@@ -255,7 +279,22 @@ CTetrisGame::StartNextTurn() {
 Boolean
 CTetrisGame::DoDrop() {
 	Boolean collision = DropAndStampPiece();
-	CheckForRowClears();
+	UInt8 rowsCleared = DoRowClears();
+	
+	if(collision) {
+		// TODO: Trigger scoring for placing a piece down
+		
+		// Clear the current piece while the rowsCleared animation triggers
+		StartNewTurn(PieceKind::None);
+		
+		if(rowsCleared == 0) {
+			StartNextTurn();
+		}
+		else {
+			// Queue a turn clear for after the line clearing animations are complete
+			mState.mQueueNewTurn = TRUE;
+		}
+	}
 	
 	return collision;
 }
@@ -285,13 +324,7 @@ CTetrisGame::DropAndStampPiece() {
 			mState.mBoardState);
 		
 		// Set game over
-		mState.mGameOver = TRUE;
-		
-		// Start the next turn.
-		// (Not strictly necessary, but the GameBoy version does this
-		// to show yet another piece over the top of the current piece)
-		
-		StartNextTurn();	
+		mState.mGameOver = TRUE;	
 		
 		return TRUE;
 	}
@@ -315,14 +348,6 @@ CTetrisGame::DropAndStampPiece() {
 			FALSE,
 			mState.mBoardState);
 		
-		
-		// TODO: Trigger scoring for placing a piece down
-		// (Maybe do this externally to this function,
-		// based upon the return value, for more control?)
-		
-		// Start the next turn.
-		StartNextTurn();
-		
 		return TRUE;
 	}
 	else {
@@ -333,8 +358,10 @@ CTetrisGame::DropAndStampPiece() {
 	}
 }
 
-void
-CTetrisGame::CheckForRowClears() {
+UInt8
+CTetrisGame::DoRowClears() {
+	UInt8 rowsCleared = 0;
+
 	for(int j = 0; j < 20; j++) {
 		Boolean rowIsComplete = TRUE;
 		for(int i = 0; i < 10; i++) {
@@ -356,11 +383,14 @@ CTetrisGame::CheckForRowClears() {
 				
 				// TODO: Play with this value depending on row/column
 				// to achieve fancy clear animations
-				TetrisPieces::SetClearCountdown(mState.mBoardState[j][i], 8);
+				TetrisPieces::SetClearCountdown(mState.mBoardState[j][i], 7);
 			}
 			
+			rowsCleared++;
 		}
 	}
+	
+	return rowsCleared;
 }
 
 
@@ -403,7 +433,13 @@ CTetrisGame::DoGameTick() {
 	}
 	
 	if(!skipDrop) {
-		DoDrop();
+		if(mState.mQueueNewTurn) {
+			mState.mQueueNewTurn = FALSE;
+			StartNextTurn();
+		}
+		else {
+			DoDrop();
+		}
 	}
 	
 	return TRUE;
@@ -413,30 +449,45 @@ SInt32
 CTetrisGame::GetCurrentTickDelay() {
 	// TODO: Move this into an array and actually finish it
 	
+	Boolean animation = FALSE;
+	
+	for(int j = 0; j < 20; j++) {
+		for(int i = 0; i < 10; i++) {
+			if(TetrisPieces::IsFlaggedForClear(mState.mBoardState[j][i])) {
+				animation = TRUE;
+				break;
+			}
+		}
+	}
+	
+	if(animation) {
+		return 50;
+	}
+	
 	if(mState.mLevel < 0) {
 		// Infinite timeout
 		return -1;
 	}
 	else if(mState.mLevel == 0) {
-		return 53 * 1000 / 60;
+		return 53 * 100 / 60;
 	}
 	else if(mState.mLevel == 1) {
-		return 49 * 1000 / 60;
+		return 49 * 100 / 60;
 	}
 	else if(mState.mLevel == 2) {
-		return 45 * 1000 / 60;
+		return 45 * 100 / 60;
 	}
 	else if(mState.mLevel == 3) {
-		return 41 * 1000 / 60;
+		return 41 * 100 / 60;
 	}
 	else if(mState.mLevel == 4) {
-		return 37 * 1000 / 60;
+		return 37 * 100 / 60;
 	}
 	else if(mState.mLevel == 5) {
-		return 33 * 1000 / 60;
+		return 33 * 100 / 60;
 	}
 	else if(mState.mLevel == 6) {
-		return 28 * 1000 / 60;
+		return 28 * 100 / 60;
 	}
 	else if(mState.mLevel == 7) {
 		
@@ -452,7 +503,7 @@ CTetrisGame::GetCurrentTickDelay() {
 	}
 	
 	
-	return 1000;
+	return 100;
 }
 
 void

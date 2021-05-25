@@ -108,6 +108,7 @@ CTetrisGameRunnerAttachment::NewGame() {
 	mTetrisGame = CTetrisGame::CTetrisGame(0);
 	mTimeRemainingOnTick = mTetrisGame.GetCurrentTickDelay();
 	mGameActive = TRUE;
+	StartRepeating();
 	
 	GameStateChanged();
 }
@@ -115,6 +116,7 @@ CTetrisGameRunnerAttachment::NewGame() {
 void
 CTetrisGameRunnerAttachment::PauseGame() {
 	mGameActive = FALSE;
+	StopRepeating();
 	
 	GameStateChanged();
 }
@@ -122,6 +124,7 @@ CTetrisGameRunnerAttachment::PauseGame() {
 void
 CTetrisGameRunnerAttachment::ResumeGame() {
 	mGameActive = TRUE;
+	StartRepeating();
 	
 	GameStateChanged();
 }
@@ -130,28 +133,34 @@ CTetrisGameRunnerAttachment::ResumeGame() {
 void
 CTetrisGameRunnerAttachment::SpendTime(const EventRecord& inMacEvent) {
 	UInt32 currentTime = inMacEvent.when;
-	UInt32 timeDelta = currentTime - mLastUpdateTime;
+	UInt32 timeDelta = mLastUpdateTime == 0 ? 0 : currentTime - mLastUpdateTime;
 	mLastUpdateTime = currentTime;
 	
 	if(!mGameActive || !mInitialized) {
 		return;
 	}
 	
-	if(timeDelta > 1000) {
+	if(timeDelta == 0) {
+		return;
+	}
+	
+	if(timeDelta > 3000) {
 		// If the time delta was too large, assume the window was out of focus.
 		// Pause the game.
-		PauseGame();
+		//PauseGame();
 		return;
 	}
 
 	mTimeRemainingOnTick -= timeDelta;
 	
 	while(mTimeRemainingOnTick < 0) {
+		// TODO: Move this tick delay somewhere else
 		SInt32 tickDelay = mTetrisGame.GetCurrentTickDelay();
 		
 		if(tickDelay >= 0) {
 			mTimeRemainingOnTick += tickDelay;
 			mTetrisGame.DoGameTick();
+			GameStateChanged();
 		}
 		else {
 			// Infinite time, we shouldn't call game tick
@@ -201,38 +210,45 @@ CTetrisGameRunnerAttachment::HandleKeyPress( const EventRecord& inKeyEvent ) {
 	switch(charCode) {
 		case 'w':
 		case 'W':
-			mTetrisGame.DoPieceHardDrop();
-			GameStateChanged();
+			if(mTetrisGame.DoPieceHardDrop()) {
+				GameStateChanged();
+			}
 			return TRUE;
 		case 'a':
 		case 'A':
-			mTetrisGame.DoPieceLeft();
-			GameStateChanged();
+			if(mTetrisGame.DoPieceLeft()) {
+				GameStateChanged();
+			}
 			return TRUE;
 		case 's':
 		case 'S':
-			mTetrisGame.DoPieceSoftDrop();
-			GameStateChanged();
+			if(mTetrisGame.DoPieceSoftDrop()) {
+				GameStateChanged();
+			}
 			return TRUE;
 		case 'd':
 		case 'D':
-			mTetrisGame.DoPieceRight();
-			GameStateChanged();
+			if(mTetrisGame.DoPieceRight()) {
+				GameStateChanged();
+			}
 			return TRUE;
 		case 'q':
 		case 'Q':
-			mTetrisGame.DoPieceRotateCCW();
-			GameStateChanged();
+			if(mTetrisGame.DoPieceRotateCCW()) {
+				GameStateChanged();
+			}
 			return TRUE;
 		case 'e':
 		case 'E':
-			mTetrisGame.DoPieceRotateCW();
-			GameStateChanged();
+			if(mTetrisGame.DoPieceRotateCW()) {
+				GameStateChanged();
+			}
 			return TRUE;
 		case 'r':
 		case 'R':
-			mTetrisGame.DoPieceHold();
-			GameStateChanged();
+			if(mTetrisGame.DoPieceHold()) {
+				GameStateChanged();
+			}
 			return TRUE;
 		case 'n':
 		case 'N':

@@ -18,11 +18,21 @@ public:
 
 							~CTetrisGameState();
 				
-			
+							// Tracks the current game score
 				UInt32		mScore;
+				
+							// Tracks the current game level
 				UInt32		mLevel;
+				
+							// Tracks total lines cleared this game
 				UInt32		mLinesCleared;
+				
+							// If true, the game is over and will not respond to input
 				Boolean		mGameOver;
+				
+							// If true, a new turn is queued for after all current line clearing
+							// animations are done
+				Boolean		mQueueNewTurn;
 	
 				PieceKind::Type	mCurrentPiece;
 				PieceOrientation::Type		mCurrentPieceOrientation;

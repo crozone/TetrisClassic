@@ -88,6 +88,7 @@ CTetrisPane::DrawSelf() {
 			Boolean blockCollidable = TetrisPieces::IsBlockCollidable(currentBlock);
 			Boolean blockGhost = TetrisPieces::IsBlockGhost(currentBlock);
 			Boolean flaggedForClear = TetrisPieces::IsFlaggedForClear(currentBlock);
+			UInt8	clearCountdown = TetrisPieces::GetClearCountdown(currentBlock);
 		
 			if(pieceKind != PieceKind::None) {
 				// Draw a single piece rectangle
@@ -180,16 +181,21 @@ CTetrisPane::DrawSelf() {
 					::MacFrameRect(&currentPieceRect);
 				}
 				
+				// TODO: Change based on current tick
+				if(flaggedForClear) {
+					if(clearCountdown % 2 == 0) {
+						::ForeColor(blackColor);
+					}
+					else {
+						::ForeColor(whiteColor);
+					}
+					::PaintRect(&currentPieceRect);
+				}
+				
 				// Paint the outline
 				if(blockGhost) {
 					::ForeColor(basicColour);
 					::MacFrameRect(&currentPieceRect);
-				}
-				
-				// TODO: Change based on current tick
-				if(flaggedForClear) {
-					::ForeColor(blackColor);
-					::PaintRect(&currentPieceRect);
 				}
 			}
 		}

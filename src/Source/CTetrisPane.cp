@@ -87,16 +87,19 @@ CTetrisPane::DrawSelf() {
 	UInt32 scaledSquareWidth = (gameRect.right - gameRect.left) / mBufferWidth;
 	UInt32 scaledSquareHeight = (gameRect.bottom - gameRect.top) / mBufferHeight;
 	
-	UInt32 squareEdge = scaledSquareWidth < scaledSquareHeight
+	// blockWidth is the width and height of each block that makes up pieces and the board.
+	// This finds the largest blockwidth that can fit within the width and height of the board.
+	UInt32 blockWidth = scaledSquareWidth < scaledSquareHeight
 						? scaledSquareWidth : scaledSquareHeight;
 	
-	// Pane size scales with its height
-	//UInt32 squareEdge = scaledSquareHeight;
+	// The block's black border thickness.
+	// When the block is above a certain size, increase the thickness.
+	UInt32 borderWidth = blockWidth > 15 ? 2 : 1;
 						
 	// Tweak game rectangle to match exactly the width and height of
-	// a block
-	gameRect.right = gameRect.left + mBufferWidth * squareEdge;
-	gameRect.bottom = gameRect.top + mBufferHeight * squareEdge;
+	// the calculated block width
+	gameRect.right = gameRect.left + mBufferWidth * blockWidth - mBufferWidth * borderWidth + borderWidth;
+	gameRect.bottom = gameRect.top + mBufferHeight * blockWidth - mBufferHeight * borderWidth + borderWidth;
 	
 	// Move game rectangle into middle of pane rectangle
 	MacOffsetRect(&gameRect,
@@ -119,126 +122,164 @@ CTetrisPane::DrawSelf() {
 		
 	
 	Rect basePieceRect;
-	MacSetRect(&basePieceRect, 0, 0, squareEdge, squareEdge);
+	MacSetRect(&basePieceRect, 0, 0, blockWidth, blockWidth);
 	//MacInsetRect(&basePieceRect, 1, 1);
-	MacOffsetRect(&basePieceRect, gameRect.left, gameRect.bottom - squareEdge);
+	MacOffsetRect(&basePieceRect, gameRect.left, gameRect.bottom - blockWidth);
 	
-	for(SInt32 j = 0; j < mBufferHeight; j++) {
-		for(SInt32 i = 0; i < mBufferWidth; i++) {
-			BlockKind::Type currentBlock = mBuffer[j * mBufferWidth + i];
+	
+	// Split rendering into several passes.
+	//
+	// Pass 0: Ghost piece
+	// Pass 1: Collision pieces
+	// Pass 2: Animation
+	
+	for(SInt32 pass = 0; pass < 3; pass++) {
+		for(SInt32 j = 0; j < mBufferHeight; j++) {
+			for(SInt32 i = 0; i < mBufferWidth; i++) {
+				BlockKind::Type currentBlock = mBuffer[j * mBufferWidth + i];
+				
+				PieceKind::Type pieceKind = TetrisPieces::GetPieceFromBlock(currentBlock);
+				Boolean blockCollidable = TetrisPieces::IsBlockCollidable(currentBlock);
+				Boolean blockGhost = TetrisPieces::IsBlockGhost(currentBlock);
+				Boolean flaggedForClear = TetrisPieces::IsFlaggedForClear(currentBlock);
+				UInt8	clearCountdown = TetrisPieces::GetClearCountdown(currentBlock);
 			
-			PieceKind::Type pieceKind = TetrisPieces::GetPieceFromBlock(currentBlock);
-			Boolean blockCollidable = TetrisPieces::IsBlockCollidable(currentBlock);
-			Boolean blockGhost = TetrisPieces::IsBlockGhost(currentBlock);
-			Boolean flaggedForClear = TetrisPieces::IsFlaggedForClear(currentBlock);
-			UInt8	clearCountdown = TetrisPieces::GetClearCountdown(currentBlock);
-		
-			if(pieceKind != PieceKind::None) {
-				// Draw a single piece rectangle
-				Rect currentPieceRect = basePieceRect;
-				// Offset the piece by the current ammount
-				MacOffsetRect(
-					&currentPieceRect,
-					i * squareEdge,
-					-j * squareEdge
-					);
+				if(pieceKind != PieceKind::None) {
+					// Draw a single piece rectangle
+					Rect currentPieceRect = basePieceRect;
 					
-				// Change colour/style based on piece kind
-				
-				//{basic QuickDraw colors}
-				//whiteColor = 30;
-				//blackColor = 33;
-				//yellowColor = 69;
-				//magentaColor = 137;
-				//redColor = 205;
-				//cyanColor = 273;
-				//greenColor = 341;
-				//blueColor = 409;
-				SInt32 basicColour = 0;
-				RGBColor pieceColour = { 0x00, 0x00, 0x00 };
-				
-				// TODO: Set colour based on piece kind
-				switch(pieceKind) {
-					case PieceKind::I:
-						// I = Cyan
-						basicColour = cyanColor;
-						pieceColour.red = 0x00;
-						pieceColour.green = 0xFF;
-						pieceColour.blue = 0xFF;
-						break;
-					case PieceKind::O:
-						// O = Yellow
-						basicColour = yellowColor;
-						pieceColour.red = 0xFF;
-						pieceColour.green = 0xFF;
-						pieceColour.blue = 0x00;
-						break;
-					case PieceKind::T:
-						// T = Magenta
-						basicColour = magentaColor;
-						pieceColour.red = 0xFF;
-						pieceColour.green = 0x00;
-						pieceColour.blue = 0xFF;
-						break;
-					case PieceKind::S:
-						// S = Green
-						basicColour = greenColor;
-						pieceColour.red = 0x00;
-						pieceColour.green = 0xFF;
-						pieceColour.blue = 0x00;
-						break;
-					case PieceKind::Z:
-						// Z = Red
-						basicColour = redColor;
-						pieceColour.red = 0xFF;
-						pieceColour.green = 0x00;
-						pieceColour.blue = 0x00;
-						break;
-					case PieceKind::J:
-						// J = Blue
-						basicColour = blueColor;
-						pieceColour.red = 0x00;
-						pieceColour.green = 0x00;
-						pieceColour.blue = 0xFF;
-						break;
-					case PieceKind::L:
-						// L = Orange
-						// There is no orange basic colour, so use yellow.
-						// TODO: Use a pen pattern with yellow and black
-						basicColour = yellowColor;
-						pieceColour.red = 0xFF;
-						pieceColour.green = 0x99;
-						pieceColour.blue = 0x00;
-						break;
-				}
-				
-				
-				
-				// Paint the rectangle
-				if(blockCollidable) {
-					// TODO: Use RGB colours when available
-					//::RGBForeColor(&pieceColour);
-					::ForeColor(basicColour);
-					::PaintRect(&currentPieceRect);
-					::ForeColor(blackColor);
-					::MacFrameRect(&currentPieceRect);
-				}
-				
-				// TODO: Change based on current tick
-				if(flaggedForClear) {
-					if(clearCountdown % 2 == 0) {
+					// Offset the block
+					MacOffsetRect(
+						&currentPieceRect,
+						i * blockWidth - i * borderWidth,
+						-j * blockWidth + j * borderWidth
+						);
+						
+					// Change colour/style based on piece kind
+					
+					//{basic QuickDraw colors}
+					//whiteColor = 30;
+					//blackColor = 33;
+					//yellowColor = 69;
+					//magentaColor = 137;
+					//redColor = 205;
+					//cyanColor = 273;
+					//greenColor = 341;
+					//blueColor = 409;
+					SInt32 basicColour = 0;
+					RGBColor pieceColour = { 0x00, 0x00, 0x00 };
+					
+					// Set colour based on piece kind
+					switch(pieceKind) {
+						case PieceKind::I:
+							// I = Cyan
+							basicColour = cyanColor;
+							pieceColour.red = 0x00;
+							pieceColour.green = 0xFF;
+							pieceColour.blue = 0xFF;
+							break;
+						case PieceKind::O:
+							// O = Yellow
+							basicColour = yellowColor;
+							pieceColour.red = 0xFF;
+							pieceColour.green = 0xFF;
+							pieceColour.blue = 0x00;
+							break;
+						case PieceKind::T:
+							// T = Magenta
+							basicColour = magentaColor;
+							pieceColour.red = 0xFF;
+							pieceColour.green = 0x00;
+							pieceColour.blue = 0xFF;
+							break;
+						case PieceKind::S:
+							// S = Green
+							basicColour = greenColor;
+							pieceColour.red = 0x00;
+							pieceColour.green = 0xFF;
+							pieceColour.blue = 0x00;
+							break;
+						case PieceKind::Z:
+							// Z = Red
+							basicColour = redColor;
+							pieceColour.red = 0xFF;
+							pieceColour.green = 0x00;
+							pieceColour.blue = 0x00;
+							break;
+						case PieceKind::J:
+							// J = Blue
+							basicColour = blueColor;
+							pieceColour.red = 0x00;
+							pieceColour.green = 0x00;
+							pieceColour.blue = 0xFF;
+							break;
+						case PieceKind::L:
+							// L = Orange
+							// There is no orange basic colour, so use yellow.
+							// TODO: Use a pen pattern with yellow and black
+							basicColour = yellowColor;
+							pieceColour.red = 0xFF;
+							pieceColour.green = 0x99;
+							pieceColour.blue = 0x00;
+							break;
+					}
+					
+					
+					// Paint the rectangle
+					if(blockCollidable && pass == 1) {
+						// Draw black box as the border first, then draw inside
 						::ForeColor(blackColor);
+						::PaintRect(&currentPieceRect);
+						
+						Rect innerColourRect = currentPieceRect;
+						MacInsetRect(&innerColourRect, borderWidth, borderWidth);
+						
+						// Paint the inside of the block
+						// TODO: Use RGB colours when available
+						//::RGBForeColor(&pieceColour);
+						::ForeColor(basicColour);
+						::PaintRect(&innerColourRect);
+					
+						//// Paint the inside of the block
+						//// TODO: Use RGB colours when available
+						////::RGBForeColor(&pieceColour);
+						//::ForeColor(basicColour);
+						//::PaintRect(&currentPieceRect);
+						//
+						//// Paint the black block border
+						//::ForeColor(blackColor);
+						//::MacFrameRect(&currentPieceRect);
 					}
-					else {
+					
+					// TODO: Change based on current tick
+					if(flaggedForClear && pass == 2) {
+						if(clearCountdown % 2 == 0) {
+							::ForeColor(blackColor);
+						}
+						else {
+							::ForeColor(whiteColor);
+						}
+						::PaintRect(&currentPieceRect);
+					}
+					
+					// Paint the outline
+					if(blockGhost && pass == 0) {
+						// Draw coloured box as the border first, then draw inside
+						// TODO: Use RGB colours when available
+						//::RGBForeColor(&pieceColour);
+						::ForeColor(basicColour);
+						::PaintRect(&currentPieceRect);
+						
+						Rect innerColourRect = currentPieceRect;
+						MacInsetRect(&innerColourRect, borderWidth, borderWidth);
+						
+						// Paint the inside of the block white
 						::ForeColor(whiteColor);
+						::PaintRect(&innerColourRect);
+					
+						//::ForeColor(basicColour);
+						//::MacFrameRect(&currentPieceRect);
 					}
-					::PaintRect(&currentPieceRect);
-				}
-				
-				// Paint the outline
-				if(blockGhost) {
-					::ForeColor(basicColour);
-					::MacFrameRect(&currentPieceRect);
 				}
 			}
 		}

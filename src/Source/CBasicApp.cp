@@ -20,6 +20,10 @@
 #include <LActiveScroller.h>
 #include <UAttachments.h>
 
+// The following header files are included so the classes within them can be added with
+// the RegisterClass_() macro, within the RegisterClasses() function.
+// If you get "syntax errors" while adding new classes with the RegisterClass_() macro,
+// ensure you have remembered to include that header here!
 #include "CQuitOnCloseAttachment.h"
 #include "CTetrisGameRunnerAttachment.h"
 #include "CTetrisKeyHandlerAttachment.h"

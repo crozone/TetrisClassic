@@ -17,7 +17,7 @@
 #include <LCaption.h>
 #include <LStdControl.h>
 #include <LActiveScroller.h>
-#include <LSlider.h> // Cannot link - cannot find .cp source file?
+#include <UControlRegistry.h>
 #include <UAttachments.h>
 
 // The following header files are included so the classes within them can be added with
@@ -117,7 +117,7 @@ CBasicApp::StartUp()
 	ThrowIfNil_(theWindow);
 	
 	// Link all controls in the window to the application listener
-	UReanimator::LinkListenerToBroadcasters(this, theWindow, PPob_SampleWindow);
+	UReanimator::LinkListenerToBroadcasters(this, theWindow, PPob_GameSetupWindow);
 
 	this->mPrimaryWindow = theWindow;
 
@@ -315,10 +315,14 @@ CBasicApp::RegisterClasses()
 	RegisterClass_(LWindow);
 	RegisterClass_(LView);
 	RegisterClass_(LCaption);
-	RegisterClass_(LStdButton);
+	//RegisterClass_(LStdButton);
 	RegisterClass_(LOffscreenView);
 	RegisterClass_(LActiveScroller);
-	RegisterClass_(LSlider);
+	
+	UControlRegistry::RegisterClasses();
+	
+	//RegisterClass_(LControlPane);
+	//RegisterClass_(LStaticText);
 	RegisterClass_(CQuitOnCloseAttachment);
 	RegisterClass_(CTetrisGameRunnerAttachment);
 	RegisterClass_(CTetrisKeyHandlerAttachment);

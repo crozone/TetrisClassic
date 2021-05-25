@@ -14,10 +14,7 @@
 ///
 class CTetrisPane :
 	public LPane, 
-	public LPeriodical,
-	public LCommander
-	//public LListener,
-	//public LBroadcaster
+	public LListener
 	{
 
 public:
@@ -31,30 +28,16 @@ public:
 							CTetrisPane(LStream			*inStream);
 
 	virtual					~CTetrisPane();
-	
-				void		NewGame(CTetrisGame* inTetrisGame);
-				
-				void		PauseGame();
-				
-				void		ResumeGame();
 							
 	// LPane
 	virtual		void		DrawSelf();
-	
-	// LPeriodical
-	virtual		void		SpendTime(const EventRecord& inMacEvent);
-	
-	// LCommander
-	virtual		Boolean		HandleKeyPress( const EventRecord& inKeyEvent );
 								
 	// LListener
-	//virtual void			ListenToMessage( MessageT inMessage, void *ioParam );
+	virtual void			ListenToMessage( MessageT inMessage, void *ioParam );
 
 protected:
-	Boolean mGameActive;
-	SInt32 mLastUpdateTime;
-	SInt32 mNextUpdateThreshold;
-	CTetrisGame* mTetrisGame;
+	// TODO: Make pointer and malloc depending on pane type
+	BlockKind::Type	mBoardState[20][10];
 };
 
 #endif // _H_CTetrisPane

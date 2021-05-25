@@ -2,6 +2,7 @@
 #define _H_CTetrisGame
 #pragma once
 
+#include "BlockKind.h"
 #include "CTetrisGameState.h"
 
 //

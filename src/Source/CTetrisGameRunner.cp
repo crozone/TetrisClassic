@@ -54,7 +54,7 @@ CTetrisGameRunner::SpendTime(const EventRecord& inMacEvent) {
 void
 CTetrisGameRunner::NotifyGameStateChanged() {
 	// TODO: Make message id constant
-	BroadcastMessage(2000, mTetrisGame.GetState());
+	BroadcastMessage(2000, &mTetrisGame);
 }
 	
 // LCommander

@@ -14,32 +14,27 @@ CTetrisPane::CTetrisPane(const SPaneInfo &inPaneInfo)
 
 CTetrisPane::CTetrisPane(LStream *inStream)
 : LPane::LPane(inStream) {
-	StartRepeating();
+	// TODO: Figure out how to deal with different Tetris pane types
+	
+	CTetrisGame game(0);
+	
+	for(int i = 0; i < 50; i++) {
+		game.DoGameTick();
+	}
+	
+	
+	
+	game.DoPieceRight();
+	game.DoPieceRight();
+	game.DoPieceRight();
+	game.DoPieceRight();
+	
+	// Render the board state out to buffer
+	game.RenderBoard(mBoardState);
 }
 
 CTetrisPane::~CTetrisPane() {
-
-}
-
-// CTetrisPane
-void
-CTetrisPane::NewGame(CTetrisGame* inTetrisGame) {
-	mTetrisGame = inTetrisGame;
-	ResumeGame();
-}
-
-void
-CTetrisPane::PauseGame() {
-	StopRepeating();
-	mGameActive = FALSE;
-}
-
-void
-CTetrisPane::ResumeGame() {
-	//ThrowIfNil_(mTetrisGame);
-
-	StartRepeating();
-	mGameActive = TRUE;
+	
 }
 
 // LPane
@@ -60,8 +55,9 @@ CTetrisPane::DrawSelf() {
 	
 	::PenNormal();
 	
-	UInt32 gameWidth = 10;
-	UInt32 gameHeight = 20;
+	// TODO: Make varialbe based on type and size of pane
+	UInt8 gameWidth = 10;
+	UInt8 gameHeight = 20;
 	
 	UInt32 scaledSquareWidth = (gameRect.right - gameRect.left) / gameWidth;
 	UInt32 scaledSquareHeight = (gameRect.bottom - gameRect.top) / gameHeight;
@@ -75,15 +71,41 @@ CTetrisPane::DrawSelf() {
 	MacInsetRect(&basePieceRect, 1, 1);
 	MacOffsetRect(&basePieceRect, gameRect.left, gameRect.top);
 	
-	for(UInt8 j = 0; j < gameHeight; j++) {
-		for(UInt8 i = 0; i < gameWidth; i++) {
+	for(SInt32 j = 0; j < gameHeight; j++) {
+		for(SInt32 i = 0; i < gameWidth; i++) {
+			BlockKind::Type currentBlock = mBoardState[j][i];
 		
-			if(mLastUpdateTime % 3 == 0) {
+			if(currentBlock & BlockKind::CollidableFlag) {
 				// Draw a single piece rectangle
 				Rect currentPieceRect = basePieceRect;
 				// Offset the piece by the current ammount
-				MacOffsetRect(&currentPieceRect, i * squareWidth, j * squareWidth);
-			
+				MacOffsetRect(
+					&currentPieceRect,
+					i * squareWidth,
+					(gameHeight - j) * squareWidth
+					);
+					
+				// Change colour/style based on piece kind
+				PieceKind::Type pieceKind = TetrisPieces::GetPieceFromBlock(currentBlock);
+				
+				// TODO: Set colour based on piece kind
+				switch(pieceKind) {
+					case PieceKind::I:
+						break;
+					case PieceKind::O:
+						break;
+					case PieceKind::T:
+						break;
+					case PieceKind::S:
+						break;
+					case PieceKind::Z:
+						break;
+					case PieceKind::J:
+						break;
+					case PieceKind::L:
+						break;
+				}
+				
 				// Paint the rectangle
 				::PaintRect(&currentPieceRect);
 			}
@@ -103,61 +125,15 @@ CTetrisPane::DrawSelf() {
 	::LineTo(frameRect.left, frameRect.bottom);
 }
 
-// LPeriodical
+// LListener
 void
-CTetrisPane::SpendTime(const EventRecord& inMacEvent) {
-	if(!mGameActive) {
-		return;
-	}
-
-	// TODO: Handle Tetris time based updates here and update state
-	while(inMacEvent.when >= mNextUpdateThreshold) {
-		// TODO: Get update timespan from tetris game state
-		UInt32 timeDelay = 1000;
-		mNextUpdateThreshold += timeDelay;
+CTetrisPane::ListenToMessage( MessageT inMessage, void *ioParam ) {
+	if(inMessage == 2000) {
+		// ioParam is a TetrisGame
+		CTetrisGame* game = static_cast<CTetrisGame*>(ioParam);
 		
-		// Drop game piece down by one
+		// Render the board state out to buffer
+		game->RenderBoard(mBoardState);
+		
 	}
-	
-	mLastUpdateTime = inMacEvent.when;
-	Refresh();
-}
-
-// LCommander
-Boolean
-CTetrisPane::HandleKeyPress(const EventRecord& inKeyEvent) {
-	// what: Should be a keyDown event, or a key repeat event (autoKey)
-	if(inKeyEvent.what != keyDown && inKeyEvent.what != autoKey) {
-		Throw_(-1);
-	}
-
-	if(!mGameActive) {
-		return FALSE;
-	}
-
-	// TODO: Handle Tetris keypresses here and update state
-
-	
-	
-	
-	// message:
-	// Get the Character code and virtual key code from the low-order word.
-	// For Apple Desktop Bus keyboards, the low byte of the high-order word
-	// contains the ADB address of the keyboard where the keyboard event occured.
-	
-	// Get the character code and virtual key code
-	UInt8 charCode = inKeyEvent.message & charCodeMask;
-	UInt8 keyCode = inKeyEvent.message & keyCodeMask;
-	UInt8 adbAddr = inKeyEvent.message & adbAddrMask;
-	Boolean keyRepeat = inKeyEvent.what == autoKey;
-	
-	// when:
-	// The time when the event was posted, in ticks since system startup
-	
-	// where:
-	// For low level events (like keydown), contains the location of the
-	// mouse cursor in global coordinates.
-	// For high level events, contains the event ID.
-	
-	return FALSE;
 }

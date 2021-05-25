@@ -10,10 +10,13 @@ CTetrisGame::CTetrisGame() {
 	mState.mGameOver = FALSE;
 };
 
-CTetrisGame::CTetrisGame(UInt32 startLevel) {
+CTetrisGame::CTetrisGame(UInt32 startLevel) :
+	mState()
+{
 	// Setup state
 	mState.mLevel = startLevel;
-	mState.mGameOver = FALSE;	
+	mState.mGameOver = FALSE;
+	StartNextTurn();
 }
 
 CTetrisGame::~CTetrisGame() {

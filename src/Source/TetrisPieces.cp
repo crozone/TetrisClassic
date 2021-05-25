@@ -6,8 +6,22 @@ TetrisPieces::GetPieceIndex(PieceKind::Type pieceKind) {
 }
 
 PieceKind::Type
+TetrisPieces::GetPieceFromIndex(UInt8 pieceIndex) {
+	if(pieceIndex < 0 || pieceIndex > 7) {
+		Throw_(-1);
+	}
+
+	return static_cast<PieceKind::Type>(pieceIndex);
+}
+
+PieceKind::Type
 TetrisPieces::GetPieceFromBlock(BlockKind::Type blockKind) {
 	return static_cast<PieceKind::Type>(blockKind & BlockKind::PieceKindMask);
+}
+
+UInt8
+TetrisPieces::GetOrientationIndex(PieceOrientation::Type orientation) {
+	return static_cast<UInt8>(orientation);
 }
 
 BlockKind::Type
@@ -17,9 +31,9 @@ TetrisPieces::GetBlockFromPiece(
 	Boolean ghost) {
 	
 	return static_cast<BlockKind::Type>(
-		pieceKind
-		& (collidable ? BlockKind::CollidableFlag : 0)
-		& (ghost ? BlockKind::GhostFlag : 0)
+		(pieceKind & BlockKind::PieceKindMask)
+		| (collidable ? BlockKind::CollidableFlag : 0)
+		| (ghost ? BlockKind::GhostFlag : 0)
 		);	
 }
 
@@ -40,11 +54,12 @@ TetrisPieces::RenderPiece(
 	BlockKind::Type buffer[4][4]) {
 	
 	UInt8 pieceIndex = GetPieceIndex(pieceKind);
+	UInt8 orientationIndex = GetOrientationIndex(orientation);
 	BlockKind::Type blockKind = GetBlockFromPiece(pieceKind, collidable, ghost);
 	
 	for(int j = 0; j < 4; j++) {
 		for(int i = 0; i < 4; i++) {
-			if(piecesArray[pieceIndex][orientation][j][i]) {
+			if(piecesArray[pieceIndex][orientationIndex][j][i]) {
 				buffer[j][i] = blockKind;
 			}
 			else {
@@ -67,16 +82,17 @@ TetrisPieces::StampPieceOntoBoard(
 	// TODO: Make board width and height a constant
 	
 	UInt8 pieceIndex = GetPieceIndex(pieceKind);
+	UInt8 orientationIndex = GetOrientationIndex(orientation);
 	BlockKind::Type blockKind = GetBlockFromPiece(pieceKind, collidable, ghost);
 	
 	for(int j = 0; j < 4; j++) {
-		int boardY = yPosition + j;
+		int boardY = yPosition - j;
 		if(boardY >= 0 && boardY < 20) {
 			for(int i = 0; i < 4; i++) {
 				int boardX = xPosition + i;
-				if(boardX >= 0 && boardY < 10) {
-					if(piecesArray[pieceIndex][orientation][j][i]) {
-						boardBuffer[j][i] = blockKind;
+				if(boardX >= 0 && boardX < 10) {
+					if(piecesArray[pieceIndex][orientationIndex][j][i]) {
+						boardBuffer[boardY][boardX] = blockKind;
 					}
 				}
 			}
@@ -95,17 +111,25 @@ TetrisPieces::CheckCollisionWithBoard(
 	// TODO: Make board width and height a constant
 	
 	UInt8 pieceIndex = GetPieceIndex(pieceKind);
+	UInt8 orientationIndex = GetOrientationIndex(orientation);
 	
 	for(int j = 0; j < 4; j++) {
 		for(int i = 0; i < 4; i++) {
-			int boardY = yPosition + j;
+			int boardY = yPosition - j;
 			int boardX = xPosition + i;
 			if(boardY >= 0 && boardX >= 0 && boardX < 10) {
-				Boolean collidable = IsBlockCollidable(boardBuffer[boardY][boardX]);
+				// If the block is above the board, it is not colliding.
+				if(boardY < 20) {
+					// The block is within the limits of the board array,
+					// check for a collision with the current piece block and
+					// block on the game board
+								
+					Boolean collidable = IsBlockCollidable(boardBuffer[boardY][boardX]);
 				
-				if(collidable && piecesArray[pieceIndex][orientation][j][i]) {
-					// We have a collision with an existing collidable block on the board
-					return TRUE;
+					if(collidable && piecesArray[pieceIndex][orientationIndex][j][i]) {
+						// We have a collision with an existing collidable block on the board
+						return TRUE;
+					}
 				}
 			}
 			else {

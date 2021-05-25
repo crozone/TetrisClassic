@@ -12,7 +12,11 @@ public:
 	
 	static	UInt8 GetPieceIndex(PieceKind::Type pieceKind);
 	
+	static	PieceKind::Type	GetPieceFromIndex(UInt8 pieceIndex);
+	
 	static	PieceKind::Type	GetPieceFromBlock(BlockKind::Type blockKind);
+	
+	static	UInt8	GetOrientationIndex(PieceOrientation::Type orientation);
 	
 	static	BlockKind::Type GetBlockFromPiece(
 				PieceKind::Type pieceKind,

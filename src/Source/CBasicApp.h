@@ -1,6 +1,7 @@
-// ===========================================================================
-//	CBasicApp.h			©1994-2002 Metrowerks Corporation. All rights reserved.
-// ===========================================================================
+//
+// CBasicApp is the entry point for the application.
+//
+
 
 #ifndef _H_CBasicApp
 #define _H_CBasicApp

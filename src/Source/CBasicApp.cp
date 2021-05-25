@@ -1,7 +1,6 @@
-// ===========================================================================
-//	CBasicApp.cp 		©1994-2002 Metrowerks Corporation. All rights reserved.
-// ===========================================================================
-//	This file contains the starter code for a basic PowerPlant project
+//
+// CBasicApp is the entry point for the application.
+//
 
 #include "CBasicApp.h"
 
@@ -28,6 +27,7 @@
 #include "CTetrisGameRunnerAttachment.h"
 #include "CTetrisKeyHandlerAttachment.h"
 #include "CTetrisControlAttachment.h"
+#include "CMessageBusAttachment.h"
 #include "CTetrisPane.h"
 #include "TetrisMessage.h"
 
@@ -298,6 +298,7 @@ CBasicApp::RegisterClasses()
 	RegisterClass_(CTetrisGameRunnerAttachment);
 	RegisterClass_(CTetrisKeyHandlerAttachment);
 	RegisterClass_(CTetrisControlAttachment);
+	RegisterClass_(CMessageBusAttachment);
 	RegisterClass_(CTetrisPane);
 	RegisterClass_(LOffscreenView);
 	RegisterClass_(LActiveScroller);

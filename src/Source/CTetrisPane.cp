@@ -267,18 +267,19 @@ CTetrisPane::DrawSelf() {
 						// Draw coloured box as the border first, then draw inside
 						// TODO: Use RGB colours when available
 						//::RGBForeColor(&pieceColour);
-						::ForeColor(basicColour);
-						::PaintRect(&currentPieceRect);
 						
 						Rect innerColourRect = currentPieceRect;
-						MacInsetRect(&innerColourRect, borderWidth, borderWidth);
+						
+						//MacInsetRect(&innerColourRect, borderWidth, borderWidth);
+						
+						::ForeColor(basicColour);
+						::PaintRect(&innerColourRect);
+						
+						MacInsetRect(&innerColourRect, borderWidth * 2, borderWidth * 2);
 						
 						// Paint the inside of the block white
 						::ForeColor(whiteColor);
 						::PaintRect(&innerColourRect);
-					
-						//::ForeColor(basicColour);
-						//::MacFrameRect(&currentPieceRect);
 					}
 				}
 			}

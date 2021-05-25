@@ -140,6 +140,60 @@ CTetrisGame::DoPieceHold() {
 	}
 }
 
+PieceKind::Type
+CTetrisGame::GetNextPiece() {
+	// If the bag is empty, fill it.
+	if(mState.mCurrentPieceBagCount == 0) {
+		UpdatePieceBag();
+		
+		if(mState.mCurrentPieceBagCount == 0) {
+			// Sanity check
+			Throw_(-1);
+		}
+	}
+	
+	// Get the top piece from the piece bag
+	PieceKind::Type nextPiece = mState.mPieceBag[0];
+	
+	if(nextPiece == PieceKind::None) {
+		// Sanity check
+		Throw_(-1);
+	}
+	
+	// Move all pieces down by 1
+	for(UInt8 i = 0; i < mState.mCurrentPieceBagCount - 1; i++) {
+		mState.mPieceBag[i] = mState.mPieceBag[i + 1];
+	}
+	
+	// It is technically not necessary to clear the last index, 
+	// since no piece beyond the bag count should ever be accessed,
+	// but this adds a sanity check during debugging.
+	mState.mPieceBag[mState.mCurrentPieceBagCount - 1] = PieceKind::None;
+	
+	mState.mCurrentPieceBagCount--;
+	
+	return nextPiece;
+}
+
+void
+CTetrisGame::UpdatePieceBag() {
+
+	// While the piece bag has space for another piece set,
+	// generate random piece sets into the piece bag.
+	
+	while((CTetrisGameState::PieceBagBufferCount - mState.mCurrentPieceBagCount)
+		>= PieceGenerationStrategy::GetPieceSetSize(mState.mPieceGenerationStrategy)) {
+		
+		UInt8 piecesAdded = PieceGenerationStrategy::GeneratePieceSet(
+			mState.mPieceGenerationStrategy,
+			&mState.mPieceBag[mState.mCurrentPieceBagCount]
+			);
+			
+		mState.mCurrentPieceBagCount += piecesAdded;
+	}
+}
+
+
 void
 CTetrisGame::StartNewTurn(PieceKind::Type pieceKind) {
 	// Set piece to initial position
@@ -152,11 +206,11 @@ CTetrisGame::StartNewTurn(PieceKind::Type pieceKind) {
 // Starts a new turn with the next piece from the piece queue
 void
 CTetrisGame::StartNextTurn() {
-	// TODO: Get the next piece from the piece queue
-	//
-	// PieceKind::Type pieceKind = GetNextPiece();
+	// Get the next piece from the piece queue
 	
-	// StartNewTurn(pieceKind);
+	PieceKind::Type pieceKind = GetNextPiece();
+	
+	StartNewTurn(pieceKind);
 }
 
 //
@@ -266,11 +320,11 @@ CTetrisGame::GetCurrentTickDelay() {
 }
 
 void
-CTetrisGame::RenderBoard(BlockKind::Type boardBuffer[20][10]) {
+CTetrisGame::RenderBoard(BlockKind::Type blockBuffer[20][10]) {
 	// Copy current board state to buffer
 	for(int j = 0; j < 20; j++) {
 		for(int i = 0; i < 10; i++) {
-			boardBuffer[j][i] = mState.mBoardState[j][i];
+			blockBuffer[j][i] = mState.mBoardState[j][i];
 		}
 	}
 		
@@ -285,7 +339,7 @@ CTetrisGame::RenderBoard(BlockKind::Type boardBuffer[20][10]) {
 			mState.mCurrentPieceOrientation,
 			mState.mCurrentPieceXPosition,
 			i - 1,
-			boardBuffer)) {
+			blockBuffer)) {
 			
 			// Stamp ghost version of piece onto the current row
 			TetrisPieces::StampPieceOntoBoard(
@@ -295,7 +349,7 @@ CTetrisGame::RenderBoard(BlockKind::Type boardBuffer[20][10]) {
 				i,
 				FALSE,
 				TRUE,
-				boardBuffer);
+				blockBuffer);
 		}
 	}
 	
@@ -307,7 +361,7 @@ CTetrisGame::RenderBoard(BlockKind::Type boardBuffer[20][10]) {
 		mState.mCurrentPieceYPosition,
 		TRUE,
 		FALSE,
-		boardBuffer);
+		blockBuffer);
 }
 
 CTetrisGameState*	

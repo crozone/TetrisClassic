@@ -23,10 +23,6 @@ public:
 
 	static	Boolean	IsBlockGhost(BlockKind::Type blockKind);
 	
-	static	PieceOrientation::Type	RotateCW(PieceOrientation::Type orientation);
-	
-	static	PieceOrientation::Type	RotateCCW(PieceOrientation::Type orientation);
-	
 	static	void	RenderPiece(
 				PieceKind::Type pieceKind,
 				PieceOrientation::Type orientation,

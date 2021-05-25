@@ -22,6 +22,7 @@
 
 #include "CQuitOnCloseAttachment.h"
 #include "CTetrisPane.h"
+#include "Random.h"
 
 // ---------------------------------------------------------------------------
 //	Constant declarations
@@ -252,6 +253,7 @@ CBasicApp::ListenToMessage(
 			
 			if(theControl->GetPaneID() == Pane_StartButton) {
 				// Start button was pressed
+				
 				theControl->SetEnabled(false);
 			}
 		break;
@@ -264,6 +266,9 @@ CBasicApp::ListenToMessage(
 			ThrowIfNil_(theStartButton);
 			
 			theStartButton->SetEnabled(false);
+			
+			// TODO: Get Tetris pane and start the game with current rules
+			
 		break;
 	}
 	

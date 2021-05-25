@@ -22,8 +22,6 @@ CTetrisPane::CTetrisPane(LStream *inStream)
 		game.DoGameTick();
 	}
 	
-	
-	
 	game.DoPieceRight();
 	game.DoPieceRight();
 	game.DoPieceRight();
@@ -55,6 +53,13 @@ CTetrisPane::DrawSelf() {
 	
 	::PenNormal();
 	
+	// Draw temp background cross
+	::ForeColor(blackColor);
+	::MoveTo(frameRect.left, frameRect.top);
+	::LineTo(frameRect.right, frameRect.bottom);
+	::MoveTo(frameRect.right, frameRect.top);
+	::LineTo(frameRect.left, frameRect.bottom);
+	
 	// TODO: Make varialbe based on type and size of pane
 	UInt8 gameWidth = 10;
 	UInt8 gameHeight = 20;
@@ -68,61 +73,126 @@ CTetrisPane::DrawSelf() {
 	
 	Rect basePieceRect;
 	MacSetRect(&basePieceRect, 0, 0, squareWidth, squareWidth);
-	MacInsetRect(&basePieceRect, 1, 1);
-	MacOffsetRect(&basePieceRect, gameRect.left, gameRect.top);
+	//MacInsetRect(&basePieceRect, 1, 1);
+	MacOffsetRect(&basePieceRect, gameRect.left, gameRect.bottom - squareWidth);
 	
 	for(SInt32 j = 0; j < gameHeight; j++) {
 		for(SInt32 i = 0; i < gameWidth; i++) {
 			BlockKind::Type currentBlock = mBoardState[j][i];
+			
+			PieceKind::Type pieceKind = TetrisPieces::GetPieceFromBlock(currentBlock);
+			Boolean blockCollidable = TetrisPieces::IsBlockCollidable(currentBlock);
+			Boolean blockGhost = TetrisPieces::IsBlockGhost(currentBlock);
 		
-			if(currentBlock & BlockKind::CollidableFlag) {
+			if(pieceKind != PieceKind::None) {
 				// Draw a single piece rectangle
 				Rect currentPieceRect = basePieceRect;
 				// Offset the piece by the current ammount
 				MacOffsetRect(
 					&currentPieceRect,
 					i * squareWidth,
-					(gameHeight - j) * squareWidth
+					-j * squareWidth
 					);
 					
 				// Change colour/style based on piece kind
-				PieceKind::Type pieceKind = TetrisPieces::GetPieceFromBlock(currentBlock);
+				
+				//{basic QuickDraw colors}
+				//whiteColor = 30;
+				//blackColor = 33;
+				//yellowColor = 69;
+				//magentaColor = 137;
+				//redColor = 205;
+				//cyanColor = 273;
+				//greenColor = 341;
+				//blueColor = 409;
+				SInt32 basicColour = 0;
+				RGBColor pieceColour = { 0x00, 0x00, 0x00 };
 				
 				// TODO: Set colour based on piece kind
 				switch(pieceKind) {
 					case PieceKind::I:
+						// I = Cyan
+						basicColour = cyanColor;
+						pieceColour.red = 0x00;
+						pieceColour.green = 0xFF;
+						pieceColour.blue = 0xFF;
 						break;
 					case PieceKind::O:
+						// O = Yellow
+						basicColour = yellowColor;
+						pieceColour.red = 0xFF;
+						pieceColour.green = 0xFF;
+						pieceColour.blue = 0x00;
 						break;
 					case PieceKind::T:
+						// T = Magenta
+						basicColour = magentaColor;
+						pieceColour.red = 0xFF;
+						pieceColour.green = 0x00;
+						pieceColour.blue = 0xFF;
 						break;
 					case PieceKind::S:
+						// S = Green
+						basicColour = greenColor;
+						pieceColour.red = 0x00;
+						pieceColour.green = 0xFF;
+						pieceColour.blue = 0x00;
 						break;
 					case PieceKind::Z:
+						// Z = Red
+						basicColour = redColor;
+						pieceColour.red = 0xFF;
+						pieceColour.green = 0x00;
+						pieceColour.blue = 0x00;
 						break;
 					case PieceKind::J:
+						// J = Blue
+						basicColour = blueColor;
+						pieceColour.red = 0x00;
+						pieceColour.green = 0x00;
+						pieceColour.blue = 0xFF;
 						break;
 					case PieceKind::L:
+						// L = Orange
+						// There is no orange basic colour, so use yellow.
+						// TODO: Use a pen pattern with yellow and black
+						basicColour = yellowColor;
+						pieceColour.red = 0xFF;
+						pieceColour.green = 0x99;
+						pieceColour.blue = 0x00;
 						break;
 				}
 				
+				
+				
 				// Paint the rectangle
-				::PaintRect(&currentPieceRect);
+				if(blockCollidable) {
+					// TODO: Use RGB colours when available
+					//::RGBForeColor(&pieceColour);
+					::ForeColor(basicColour);
+					::PaintRect(&currentPieceRect);
+					::ForeColor(blackColor);
+					::MacFrameRect(&currentPieceRect);
+				}
+				
+				// Paint the outline
+				if(blockGhost) {
+					::ForeColor(basicColour);
+					::MacFrameRect(&currentPieceRect);
+				}
 			}
 		}
 	}
+	
+	::ForeColor(blackColor);
 		
-	// Draws boarder
+	// Draws game boarder
 	::MacFrameRect(&gameRect);
 	
-	// Draws boarder
+	// Draws frame boarder
 	::MacFrameRect(&frameRect);
 	
-	// Draw temp standin cross
-	::MoveTo(frameRect.left, frameRect.top);
-	::LineTo(frameRect.right, frameRect.bottom);
-	::MoveTo(frameRect.right, frameRect.top);
-	::LineTo(frameRect.left, frameRect.bottom);
+	
 }
 
 // LListener

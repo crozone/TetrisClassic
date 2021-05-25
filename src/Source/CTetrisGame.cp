@@ -415,6 +415,9 @@ CTetrisGame::RenderBoard(BlockKind::Type blockBuffer[20][10]) {
 				FALSE,
 				TRUE,
 				blockBuffer);
+				
+			// Break out of loop (we only want one ghost piece drawn)
+			break;
 		}
 	}
 	

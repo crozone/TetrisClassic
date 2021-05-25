@@ -115,26 +115,28 @@ TetrisPieces::CheckCollisionWithBoard(
 	
 	for(int j = 0; j < 4; j++) {
 		for(int i = 0; i < 4; i++) {
-			int boardY = yPosition - j;
-			int boardX = xPosition + i;
-			if(boardY >= 0 && boardX >= 0 && boardX < 10) {
-				// If the block is above the board, it is not colliding.
-				if(boardY < 20) {
-					// The block is within the limits of the board array,
-					// check for a collision with the current piece block and
-					// block on the game board
-								
-					Boolean collidable = IsBlockCollidable(boardBuffer[boardY][boardX]);
-				
-					if(collidable && piecesArray[pieceIndex][orientationIndex][j][i]) {
-						// We have a collision with an existing collidable block on the board
-						return TRUE;
+			if(piecesArray[pieceIndex][orientationIndex][j][i]) {
+				int boardY = yPosition - j;
+				int boardX = xPosition + i;
+				if(boardY >= 0 && boardX >= 0 && boardX < 10) {
+					// If the block is above the board, it is not colliding.
+					if(boardY < 20) {
+						// The block is within the limits of the board array,
+						// check for a collision with the current piece block and
+						// block on the game board
+									
+						Boolean collidable = IsBlockCollidable(boardBuffer[boardY][boardX]);
+					
+						if(collidable) {
+							// We have a collision with an existing collidable block on the board
+							return TRUE;
+						}
 					}
 				}
-			}
-			else {
-				// We have a collision with the edge of the board
-				return TRUE;
+				else {
+					// We have a collision with the edge of the board
+					return TRUE;
+				}
 			}
 		}
 	}

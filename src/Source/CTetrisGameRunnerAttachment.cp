@@ -95,6 +95,7 @@ CTetrisGameRunnerAttachment::AttachTetrisPanesRecursively(LPane* pane) {
 	}
 }
 
+// LAttachment
 void
 CTetrisGameRunnerAttachment::ExecuteSelf(
 	MessageT	inMessage,
@@ -115,7 +116,8 @@ CTetrisGameRunnerAttachment::ExecuteSelf(
 		break;
 		case msg_FinishCreate:
 			EnsureInitialized();
-			// The pane hierarchy has been created, we can initialize 
+			// The pane hierarchy has been created, we can initialize
+		break;
 		case msg_KeyPress:
 			EventRecord* inKeyEventPtr = static_cast<EventRecord*>(ioParam);
 			HandleKeyPress(*inKeyEventPtr);

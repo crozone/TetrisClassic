@@ -241,7 +241,8 @@ CTetrisPane::DrawSelf() {
 // LListener
 void
 CTetrisPane::ListenToMessage(MessageT inMessage, void *ioParam) {
-	if(inMessage == 2000) {
+	switch(inMessage) {
+		case 2000:
 		// ioParam is a TetrisGame
 		CTetrisGame* game = static_cast<CTetrisGame*>(ioParam);
 		ThrowIfNil_(game);
@@ -296,5 +297,6 @@ CTetrisPane::ListenToMessage(MessageT inMessage, void *ioParam) {
 			// Invalidate the drawing area
 			this->Refresh();
 		}
+	break;
 	}
 }

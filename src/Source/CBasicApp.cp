@@ -169,11 +169,10 @@ CBasicApp::HandleKeyPress(
 		keyString.Append(static_cast<SInt32>(keyCode));
 		theKeyCodeCaption->SetDescriptor(keyString);
 	}
-
-	// TODO: Only return true if the game state is "running", otherwise
-	// let the framework handle the key input.
-		
-	return true;
+	
+	// Return FALSE so that all other commanders have a chance to
+	// process the keycode.	
+	return FALSE;
 }
 
 

@@ -11,28 +11,23 @@ class CTetrisGame
 {
 
 public:
-
 							CTetrisGame();
 
+							CTetrisGame(UInt32 startLevel);
+
 							~CTetrisGame();
-							
-				// TODO: Make all "Do" methods return Boolean to indicate if the game state changed.
-				// TRUE if state was updated (and needs to be re-rendered).
-				// FALSE if no change occured.
 	
-				void		InitializeGame(UInt32 startLevel);
-	
-				void		DoPieceLeft();
+				Boolean		DoPieceLeft();
 				
-				void		DoPieceRight();
+				Boolean		DoPieceRight();
 				
-				void		DoPieceRotateCW();
+				Boolean		DoPieceRotateCW();
 				
-				void		DoPieceRotateCCW();
+				Boolean		DoPieceRotateCCW();
 				
-				void		DoPieceSoftDrop();
+				Boolean		DoPieceSoftDrop();
 				
-				void		DoPieceHardDrop();
+				Boolean		DoPieceHardDrop();
 				
 				Boolean		DoPieceHold();
 				
@@ -42,9 +37,9 @@ public:
 				
 				void		RenderBoard(BlockKind::Type blockBuffer[20][10]);
 				
-// TODO:		void		RenderHoldPiece(BlockKind::Type blockBuffer[4][4]);
+				void		RenderHoldPiece(BlockKind::Type blockBuffer[4][4]);
 
-// TODO:		void		RenderBagPiece(UInt8 index, BlockKind::Type blockBuffer[4][4]);
+				void		RenderBagPiece(UInt8 index, BlockKind::Type blockBuffer[4][4]);
 				
 				CTetrisGameState*	GetState();
 

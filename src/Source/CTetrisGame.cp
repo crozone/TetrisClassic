@@ -5,24 +5,22 @@
 #include "CTetrisGame.h"
 
 CTetrisGame::CTetrisGame() {
+	// Setup state
+	mState.mLevel = 0;
+	mState.mGameOver = FALSE;
+};
 
+CTetrisGame::CTetrisGame(UInt32 startLevel) {
+	// Setup state
+	mState.mLevel = startLevel;
+	mState.mGameOver = FALSE;	
 }
 
 CTetrisGame::~CTetrisGame() {
+	
+}
 
-}
-	
-void
-CTetrisGame::InitializeGame(UInt32 startLevel) {
-	// Setup new state
-	CTetrisGameState newState;
-	newState.mLevel = startLevel;
-	newState.mGameOver = FALSE;
-	
-}
-	
-// TODO: Maybe make this return Boolean?
-void
+Boolean
 CTetrisGame::DoPieceLeft() {
 	// Move the piece left if it won't collide with anything
 	if(!TetrisPieces::CheckCollisionWithBoard(
@@ -33,10 +31,15 @@ CTetrisGame::DoPieceLeft() {
 		mState.mBoardState)) {
 		
 		mState.mCurrentPieceXPosition--;
+		
+		return TRUE;
+	}
+	else {
+		return FALSE;
 	}
 }
 				
-void
+Boolean
 CTetrisGame::DoPieceRight() {
 	// Move the piece right if it won't collide with anything
 	if(!TetrisPieces::CheckCollisionWithBoard(
@@ -47,10 +50,15 @@ CTetrisGame::DoPieceRight() {
 		mState.mBoardState)) {
 		
 		mState.mCurrentPieceXPosition++;
+		
+		return TRUE;
+	}
+	else {
+		return FALSE;
 	}
 }
 
-void
+Boolean
 CTetrisGame::DoPieceRotateCW() {
 	// Rotate the piece clockwise if it won't collide with anything
 	
@@ -64,10 +72,15 @@ CTetrisGame::DoPieceRotateCW() {
 		mState.mBoardState)) {
 		
 		mState.mCurrentPieceOrientation = orientation;
+		
+		return TRUE;
+	}
+	else {
+		return FALSE;
 	}
 }
 				
-void
+Boolean
 CTetrisGame::DoPieceRotateCCW() {
 	// Rotate the piece counter-clockwise if it won't collide with anything
 	
@@ -81,22 +94,35 @@ CTetrisGame::DoPieceRotateCCW() {
 		mState.mBoardState)) {
 		
 		mState.mCurrentPieceOrientation = orientation;
+		
+		return TRUE;
+	}
+	else {
+		return FALSE;
 	}
 }
-				
-void
+
+// Move the piece down one				
+Boolean
 CTetrisGame::DoPieceSoftDrop() {
 	if(!DoDrop()) {
 		
 		// TODO: Add to soft-drop counter for scoring purposes.
 		//       Many game rulesets reward points per soft-drop line.
 		
-		// softDropThisTurnn++;
+		// softDropThisTurn++;
+		
+		return TRUE;
+	}
+	else {
+		return FALSE;
 	}
 }
-				
-void
+
+// Drop the piece until it hits the board
+Boolean
 CTetrisGame::DoPieceHardDrop() {
+	Boolean boardUpdated = FALSE;
 	// Move the piece down until it collides with something.
 	
 	while(!DoDrop()) {	
@@ -104,7 +130,11 @@ CTetrisGame::DoPieceHardDrop() {
 		//       Many game rulesets reward points per hard-drop line
 			
 		// hardDropThisTurnn++;
+		
+		boardUpdated = TRUE;
 	}
+	
+	return boardUpdated;
 }
 
 
@@ -118,20 +148,18 @@ CTetrisGame::DoPieceHold() {
 		PieceKind::Type currentHoldPiece = mState.mCurrentHoldPiece;
 		mState.mCurrentHoldPiece = mState.mCurrentPiece;
 		
-		PieceKind::Type nextPiece;
 		if(currentHoldPiece == PieceKind::None) {
 			// Hold was empty, so new piece is from the top of the piece queue
 			// TODO: Implement DequeueNextPiece() and fix this.
 			
-			// nextPiece = DequeueNextPiece();
-			nextPiece = PieceKind::O;
+			PieceKind::Type nextPiece = GetNextPiece();
+			StartNewTurn(nextPiece);
 		}
 		else {
 			// Hold was not empty, so new piece is the existing hold piece
-			nextPiece = currentHoldPiece;
+			PieceKind::Type holdPiece = currentHoldPiece;
+			StartNewTurn(holdPiece);
 		}
-		
-		StartNewTurn(nextPiece);
 		
 		return TRUE;
 	}
@@ -140,6 +168,9 @@ CTetrisGame::DoPieceHold() {
 	}
 }
 
+
+// Get the next piece from the piece bag,
+// and regenerate the piece bag if necessary.
 PieceKind::Type
 CTetrisGame::GetNextPiece() {
 	// If the bag is empty, fill it.
@@ -208,8 +239,7 @@ void
 CTetrisGame::StartNextTurn() {
 	// Get the next piece from the piece queue
 	
-	PieceKind::Type pieceKind = GetNextPiece();
-	
+	PieceKind::Type pieceKind = GetNextPiece();	
 	StartNewTurn(pieceKind);
 }
 
@@ -312,8 +342,40 @@ CTetrisGame::DoGameTick() {
 				
 UInt32
 CTetrisGame::GetCurrentTickDelay() {
-	// TODO: Make this change based on current level and animation frames
+	// TODO: Move this into an array and actually finish it
+	if(mState.mLevel <= 0) {
+		return 53 * 1000 / 60;
+	}
+	else if(mState.mLevel == 1) {
+		return 49 * 1000 / 60;
+	}
+	else if(mState.mLevel == 2) {
+		return 45 * 1000 / 60;
+	}
+	else if(mState.mLevel == 3) {
+		return 41 * 1000 / 60;
+	}
+	else if(mState.mLevel == 4) {
+		return 37 * 1000 / 60;
+	}
+	else if(mState.mLevel == 5) {
+		return 33 * 1000 / 60;
+	}
+	else if(mState.mLevel == 6) {
+		return 28 * 1000 / 60;
+	}
+	else if(mState.mLevel == 7) {
+		
+	}
+	else if(mState.mLevel == 8) {
 	
+	}
+	else if(mState.mLevel == 9) {
+	
+	}
+	else {
+	
+	}
 	
 	
 	return 1000;

@@ -26,7 +26,6 @@ protected:
 	Boolean	HandleKeyPress(const EventRecord& inKeyEvent);
 	
 	void	EnsureInitialized();
-	void	AddListenersRecursivelyFromHost();
 	
 	// LListener
 	virtual void	ListenToMessage(MessageT inMessage, void* ioParam);

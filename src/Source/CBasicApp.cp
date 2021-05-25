@@ -17,6 +17,7 @@
 #include <LCaption.h>
 #include <LStdControl.h>
 #include <LActiveScroller.h>
+#include <LSlider.h> // Cannot link - cannot find .cp source file?
 #include <UAttachments.h>
 
 // The following header files are included so the classes within them can be added with
@@ -35,6 +36,14 @@
 //	Constant declarations
 
 const ResIDT	PPob_SampleWindow			= 128;
+const ResIDT	PPob_GameSetupWindow		= 129;
+const ResIDT	PPob_MainGameWindow			= 130;
+const ResIDT	PPob_ScoreWindow			= 131;
+const ResIDT	PPob_NextPieceWindow		= 132;
+const ResIDT	PPob_HoldPieceWindow		= 133;
+const ResIDT	PPob_DebugWindow			= 134;
+
+
 const PaneIDT	Pane_StartButton			= 3;
 const PaneIDT	Pane_PauseButton			= 4;
 const PaneIDT	Pane_ResumeButton			= 5;
@@ -104,7 +113,7 @@ void
 CBasicApp::StartUp()
 {
 	// Create primary window
-	LWindow* theWindow = LWindow::CreateWindow(PPob_SampleWindow, this);
+	LWindow* theWindow = LWindow::CreateWindow(PPob_GameSetupWindow, this);
 	ThrowIfNil_(theWindow);
 	
 	// Link all controls in the window to the application listener
@@ -113,6 +122,19 @@ CBasicApp::StartUp()
 	this->mPrimaryWindow = theWindow;
 
 	theWindow->Show();
+	
+	// OLD CODE:
+
+	//// Create primary window
+	//LWindow* theWindow = LWindow::CreateWindow(PPob_SampleWindow, this);
+	//ThrowIfNil_(theWindow);
+	//
+	//// Link all controls in the window to the application listener
+	//UReanimator::LinkListenerToBroadcasters(this, theWindow, PPob_SampleWindow);
+	//
+	//this->mPrimaryWindow = theWindow;
+	//
+	//theWindow->Show();
 }
 
 // Handle application keypresses
@@ -294,12 +316,13 @@ CBasicApp::RegisterClasses()
 	RegisterClass_(LView);
 	RegisterClass_(LCaption);
 	RegisterClass_(LStdButton);
+	RegisterClass_(LOffscreenView);
+	RegisterClass_(LActiveScroller);
+	RegisterClass_(LSlider);
 	RegisterClass_(CQuitOnCloseAttachment);
 	RegisterClass_(CTetrisGameRunnerAttachment);
 	RegisterClass_(CTetrisKeyHandlerAttachment);
 	RegisterClass_(CTetrisControlAttachment);
 	RegisterClass_(CMessageBusAttachment);
 	RegisterClass_(CTetrisPane);
-	RegisterClass_(LOffscreenView);
-	RegisterClass_(LActiveScroller);
 }

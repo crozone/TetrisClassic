@@ -45,46 +45,9 @@ CTetrisGameRunnerAttachment::CTetrisGameRunnerAttachment(LStream*	inStream)
 void
 CTetrisGameRunnerAttachment::EnsureInitialized() {
 	if(!mInitialized) {
-		AddListenersRecursivelyFromHost();
 		mInitialized = true;
 	}
 }
-
-// Assumes the attachable that this attachment is attached to
-// is a View with subpanes and subviews that at some depth, contain
-// Tetris Render Panes that will be used to render the Tetris game board.
-//
-// This method locates the TRPs and adds them as a listener to
-// the game runner broadcaster.
-void
-CTetrisGameRunnerAttachment::AddListenersRecursivelyFromHost() {
-	// The attachable is the host to which this attachment is currently connected.
-	LAttachable* attachable = this->GetOwnerHost();
-	
-	// The attachable is usually a Pane
-	LPane* pane = dynamic_cast<LPane*>(attachable);
-	
-	if(pane == nil) {
-		// If we have no LPane host, there's nothing to do here.
-		return;
-	}
-	
-	PaneHelpers::AttachBroadcasterToPaneListenersRecursively(this, pane);
-	
-	// Note: We currently rely on a side effect of the above call to AttachBroadcasterToPaneListenersRecursively
-	//       as an interim measure.
-	//
-	//       Since this attachment implements LListener and is attached to the parent pane,
-	//       AttachTetrisPanesRecursively will actually subscribe this attachment to itself.
-	//       i.e. this attachment can send messages to itself via BroadcastMessage() like a loopback.
-	//
-	//       It is intended that all the code that needs to broadcast messages to this attachment
-	//       will eventually be moved into their own attachment, for greater separation of concerns.
-	//       Both the keypress handling, and even LPeriodic game updates, will be moved, however the code
-	//       will not need to be updated much since the BroadcastMessage() mechanism will remain the same.
-	
-}
-
 
 // LListener
 void

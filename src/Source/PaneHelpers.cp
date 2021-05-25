@@ -3,37 +3,64 @@
 
 using namespace PaneHelpers;
 
-// Recurses the pane and adds the pane and attachments,
-// subpanes and attachments, to those subpanes, as listeners if they
-// implement LListener.
 void
-PaneHelpers::AttachBroadcasterToPaneListenersRecursively(
-	LBroadcaster* broadcaster,
-	LPane* pane)
+PaneHelpers::AttachNodesRecursively(
+	LPane* pane,
+	LBroadcaster* upstreamBroadcaster,
+	LListener* upstreamListener,
+	bool allowSelfAttach) // allowSelfAttach allows upstreamListener to be added as a listener to upstreamBroadcaster
 {	
-	ThrowIfNil_(broadcaster);
-	ThrowIfNil_(pane);
+	//
+	// Handle the pane
+	//
 	
-	// Check the current pane to see if it is an LListener
+	// Attach upstream broadcaster -> pane listener
 	LListener* listener = dynamic_cast<LListener*>(pane);
-	// If the pane is a listener, attach it.
-	if (listener != nil) {
-		broadcaster->AddListener(listener);
+	if (upstreamBroadcaster != nil && listener != nil) {
+		if(allowSelfAttach || upstreamListener != listener) {
+			upstreamBroadcaster->AddListener(listener);
+		}
 	}
 	
-	// Check if any of the current pane's attachments are LListeners too, and attach those.
+	// Attach upstream listener -> pane broadcaster
+	LBroadcaster* broadcaster = dynamic_cast<LBroadcaster*>(pane);
+	if (upstreamListener != nil && broadcaster != nil) {
+		if(allowSelfAttach || upstreamBroadcaster != broadcaster) {
+			broadcaster->AddListener(upstreamListener);
+		}
+	}
+	
+	//
+	// Handle the pane's attachments
+	//
+	
+	// Iterate the pane's attachments and check those for LListener and LBroadcaster
 	TArray<LAttachment*>* attachments = pane->GetAttachmentsList();
 	if(attachments != nil) {
 		TArrayIterator<LAttachment*> attachmentsIterator(*attachments);
 		LAttachment	*theAttachment = nil;
 		while (attachmentsIterator.Next(theAttachment)) {
+			// Attach upstream broadcaster -> attachment listener
 			LListener* attachmentListener = dynamic_cast<LListener*>(theAttachment);
-			if(attachmentListener != nil) {
-				broadcaster->AddListener(attachmentListener);
+			if (upstreamBroadcaster != nil && attachmentListener != nil) {
+				if(allowSelfAttach || upstreamListener != attachmentListener) {
+					upstreamBroadcaster->AddListener(attachmentListener);
+				}
+			}
+			
+			// Attach upstream listener -> attachment broadcaster
+			LBroadcaster* attachmentBroadcaster = dynamic_cast<LBroadcaster*>(theAttachment);
+			if (upstreamListener != nil && attachmentBroadcaster != nil) {
+				if(allowSelfAttach || upstreamBroadcaster != attachmentBroadcaster) {
+					attachmentBroadcaster->AddListener(upstreamListener);
+				}
 			}
 		}
 	}
 	
+	//
+	// Recurse the pane's subpanes (if it's a view)
+	//
 	
 	// Check if this is a view, and if so recursively traverse its subpanes.
 	LView* view = dynamic_cast<LView*>(pane);
@@ -43,7 +70,7 @@ PaneHelpers::AttachBroadcasterToPaneListenersRecursively(
 		TArrayIterator<LPane*> subPanesIterator(subPanes);
 		LPane	*theSub = nil;
 		while (subPanesIterator.Next(theSub)) {
-			AttachBroadcasterToPaneListenersRecursively(broadcaster, theSub);
+			AttachNodesRecursively(theSub, upstreamBroadcaster, upstreamListener, allowSelfAttach);
 		}
 	}
 }

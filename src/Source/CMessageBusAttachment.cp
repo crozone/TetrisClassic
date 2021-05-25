@@ -36,16 +36,14 @@ CMessageBusAttachment::CMessageBusAttachment(LStream*	inStream)
 void
 CMessageBusAttachment::EnsureInitialized() {
 	if(!mInitialized) {
-		AddListenersRecursivelyFromHost();
-		// TODO
-		// AddBroadcastersRecursivelyFromHost();
+		AddNodesRecursivelyFromHost();
 		mInitialized = true;
 	}
 }
 
 
 void
-CMessageBusAttachment::AddListenersRecursivelyFromHost() {
+CMessageBusAttachment::AddNodesRecursivelyFromHost() {
 	// The attachable is the host to which this attachment is currently connected.
 	LAttachable* attachable = this->GetOwnerHost();
 	
@@ -57,16 +55,18 @@ CMessageBusAttachment::AddListenersRecursivelyFromHost() {
 		return;
 	}
 	
-	// TODO: Check that AttachBroadcasterToPaneListenersRecursively doesn't attach this
-	//       instance of CMessageBusAttachment to itself.
-	PaneHelpers::AttachBroadcasterToPaneListenersRecursively(this, pane);
+	LBroadcaster* thisBroadcaster = dynamic_cast<LBroadcaster*>(this);
+	LListener* thisListener = dynamic_cast<LListener*>(this);
+	
+	PaneHelpers::AttachNodesRecursively(pane, thisBroadcaster, thisListener);
 }
+
 
 
 // LListener
 void
 CMessageBusAttachment::ListenToMessage(MessageT inMessage, void *ioParam) {
-	// TODO
+	this->BroadcastMessage(inMessage, ioParam);
 }
 
 // LAttachment

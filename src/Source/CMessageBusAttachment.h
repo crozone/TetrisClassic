@@ -20,9 +20,7 @@ protected:
 	Boolean mInitialized;
 	
 	void	EnsureInitialized();
-	// TODO:
-	// void	AddBroadcastersRecursivelyFromHost();
-	void	AddListenersRecursivelyFromHost();
+	void	AddNodesRecursivelyFromHost();
 	
 	// LListener
 	virtual void	ListenToMessage(MessageT inMessage, void* ioParam);

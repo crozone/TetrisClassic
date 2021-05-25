@@ -42,33 +42,9 @@ CTetrisKeyHandlerAttachment::CTetrisKeyHandlerAttachment(LStream*	inStream)
 void
 CTetrisKeyHandlerAttachment::EnsureInitialized() {
 	if(!mInitialized) {
-		AddListenersRecursivelyFromHost();
 		mInitialized = true;
 	}
 }
-
-// Assumes the attachable that this attachment is attached to
-// is a View with subpanes and subviews that at some depth, contain
-// Tetris Render Panes that will be used to render the Tetris game board.
-//
-// This method locates the TRPs and adds them as a listener to
-// the game runner broadcaster.
-void
-CTetrisKeyHandlerAttachment::AddListenersRecursivelyFromHost() {
-	// The attachable is the host to which this attachment is currently connected.
-	LAttachable* attachable = this->GetOwnerHost();
-	
-	// The attachable is usually a Pane
-	LPane* pane = dynamic_cast<LPane*>(attachable);
-	
-	if(pane == nil) {
-		// If we have no LPane host, there's nothing to do here.
-		return;
-	}
-	
-	PaneHelpers::AttachBroadcasterToPaneListenersRecursively(this, pane);
-}
-
 
 // LListener
 void

@@ -34,7 +34,6 @@ protected:
 	void	NewGame();
 	void	PauseGame();
 	void	ResumeGame();
-	void	AddListenersRecursivelyFromHost();
 	
 	// LListener
 	virtual void	ListenToMessage(MessageT inMessage, void* ioParam);

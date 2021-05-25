@@ -3,9 +3,11 @@
 #pragma once
 
 namespace PaneHelpers {
-	void AttachBroadcasterToPaneListenersRecursively(
-	LBroadcaster* broadcaster,
-	LPane* pane);
+	void AttachNodesRecursively(
+	LPane* pane,
+	LBroadcaster* upstreamBroadcaster,
+	LListener* upstreamListener,
+	bool allowSelfAttach = false);
 }
 
 #endif // _H_PaneHelpers

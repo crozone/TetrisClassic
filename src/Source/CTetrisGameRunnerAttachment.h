@@ -20,6 +20,7 @@ public:
 	virtual		void		SpendTime(const EventRecord& inMacEvent);
 
 protected:
+	Boolean mInitialized;
 	Boolean mGameActive;
 	UInt32 mLastUpdateTime;
 	SInt32 mTimeRemainingOnTick;
@@ -28,6 +29,7 @@ protected:
 	Boolean	HandleKeyPress(const EventRecord& inKeyEvent);
 	void	GameStateChanged();
 	
+	void	EnsureInitialized();
 	void	NewGame();
 	void	PauseGame();
 	void	ResumeGame();

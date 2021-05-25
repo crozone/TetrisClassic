@@ -37,8 +37,8 @@ public:
 	static	void	StampPieceOntoBoard(
 				PieceKind::Type pieceKind,
 				PieceOrientation::Type orientation,
-				UInt8 xPosition,
-				UInt8 yPosition,
+				SInt8 xPosition,
+				SInt8 yPosition,
 				Boolean collidable,
 				Boolean ghost,
 				BlockKind::Type boardBuffer[20][10]);
@@ -46,8 +46,8 @@ public:
 	static	Boolean	CheckCollisionWithBoard(
 				PieceKind::Type pieceKind,
 				PieceOrientation::Type orientation,
-				UInt8 xPosition,
-				UInt8 yPosition,
+				SInt8 xPosition,
+				SInt8 yPosition,
 				BlockKind::Type boardBuffer[20][10]);
 
 protected:

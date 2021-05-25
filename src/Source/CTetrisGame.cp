@@ -402,7 +402,7 @@ CTetrisGame::RenderBoard(BlockKind::Type blockBuffer[20][10]) {
 	
 	// To do this, we move the piece downwards until it collides with something.
 	// Then we draw the ghost piece in the last known non-colliding position.
-	for(int i = mState.mCurrentPieceYPosition - 1; i >= 0; i--) {
+	for(int i = mState.mCurrentPieceYPosition; i >= 0; i--) {
 		// Check for a collision below the current row
 		if(TetrisPieces::CheckCollisionWithBoard(
 			mState.mCurrentPiece,

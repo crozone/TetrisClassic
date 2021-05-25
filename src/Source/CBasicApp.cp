@@ -194,8 +194,7 @@ CBasicApp::ObeyCommand(
 	switch (inCommand) {
 	
 		case cmd_New: {
-			
-			break;
+
 		}
 
 		default: {
@@ -268,6 +267,10 @@ CBasicApp::ListenToMessage(
 			theStartButton->SetEnabled(false);
 			
 			// TODO: Get Tetris pane and start the game with current rules
+			//LCommander::GetTopCommander();
+			// 1001 = Begin new game
+			theMainWindow->ProcessCommand(1001, nil);
+			break;
 			
 		break;
 	}

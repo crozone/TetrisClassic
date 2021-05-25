@@ -9,26 +9,25 @@ CTetrisPane::CTetrisPane()
 
 CTetrisPane::CTetrisPane(const SPaneInfo &inPaneInfo)
 : LPane::LPane(inPaneInfo) {
-
+	// Initialize board buffer
+	for(int j = 0; j < 20; j++) {
+		for(int i = 0; i < 10; i++) {
+			mBoardState[j][i] = BlockKind::None;
+		}
+	}
 }
 
 CTetrisPane::CTetrisPane(LStream *inStream)
 : LPane::LPane(inStream) {
 	// TODO: Figure out how to deal with different Tetris pane types
+	// with different sizes
 	
-	CTetrisGame game(0);
-	
-	for(int i = 0; i < 50; i++) {
-		game.DoGameTick();
+	// Initialize board buffer
+	for(int j = 0; j < 20; j++) {
+		for(int i = 0; i < 10; i++) {
+			mBoardState[j][i] = BlockKind::None;
+		}
 	}
-	
-	game.DoPieceRight();
-	game.DoPieceRight();
-	game.DoPieceRight();
-	game.DoPieceRight();
-	
-	// Render the board state out to buffer
-	game.RenderBoard(mBoardState);
 }
 
 CTetrisPane::~CTetrisPane() {
@@ -38,43 +37,48 @@ CTetrisPane::~CTetrisPane() {
 // LPane
 void
 CTetrisPane::DrawSelf() {
+	// TODO: Make varialbe based on type and size of pane
+	UInt8 gameWidth = 10;
+	UInt8 gameHeight = 20;
+
 	Rect frameRect;
 	// CalcLocalFrameRect returns the paneÕs frame
 	// as a QuickDraw rectangle in local coordinates
+	
 	CalcLocalFrameRect(frameRect);
 	
 	// Define the rectangle in which the piece squares will be drawn
 	Rect gameRect = frameRect;
 	MacInsetRect(&gameRect, 2, 2);
 	
-	// TODO:
-	// * Learn macOS QuickDraw
-	// * Get this method to draw the Tetris gameboard from state
+	UInt32 scaledSquareWidth = (gameRect.right - gameRect.left) / gameWidth;
+	UInt32 scaledSquareHeight = (gameRect.bottom - gameRect.top) / gameHeight;
+	
+	UInt32 squareEdge = scaledSquareWidth < scaledSquareHeight
+						? scaledSquareWidth : scaledSquareHeight;
+	
+	// Pane size scales with its height
+	//UInt32 squareEdge = scaledSquareHeight;
+						
+	// Tweak game rectangle to match exactly the width and height of
+	// a block
+	gameRect.right = gameRect.left + 10 * squareEdge;
+	gameRect.bottom = gameRect.top + 20 * squareEdge;
 	
 	::PenNormal();
 	
 	// Draw temp background cross
 	::ForeColor(blackColor);
-	::MoveTo(frameRect.left, frameRect.top);
-	::LineTo(frameRect.right, frameRect.bottom);
-	::MoveTo(frameRect.right, frameRect.top);
-	::LineTo(frameRect.left, frameRect.bottom);
-	
-	// TODO: Make varialbe based on type and size of pane
-	UInt8 gameWidth = 10;
-	UInt8 gameHeight = 20;
-	
-	UInt32 scaledSquareWidth = (gameRect.right - gameRect.left) / gameWidth;
-	UInt32 scaledSquareHeight = (gameRect.bottom - gameRect.top) / gameHeight;
-	
-	UInt32 squareWidth = scaledSquareWidth > scaledSquareHeight
-						? scaledSquareWidth : scaledSquareHeight;
+	::MoveTo(gameRect.left, gameRect.top);
+	::LineTo(gameRect.right, gameRect.bottom);
+	::MoveTo(gameRect.right, gameRect.top);
+	::LineTo(gameRect.left, gameRect.bottom);
 		
 	
 	Rect basePieceRect;
-	MacSetRect(&basePieceRect, 0, 0, squareWidth, squareWidth);
+	MacSetRect(&basePieceRect, 0, 0, squareEdge, squareEdge);
 	//MacInsetRect(&basePieceRect, 1, 1);
-	MacOffsetRect(&basePieceRect, gameRect.left, gameRect.bottom - squareWidth);
+	MacOffsetRect(&basePieceRect, gameRect.left, gameRect.bottom - squareEdge);
 	
 	for(SInt32 j = 0; j < gameHeight; j++) {
 		for(SInt32 i = 0; i < gameWidth; i++) {
@@ -90,8 +94,8 @@ CTetrisPane::DrawSelf() {
 				// Offset the piece by the current ammount
 				MacOffsetRect(
 					&currentPieceRect,
-					i * squareWidth,
-					-j * squareWidth
+					i * squareEdge,
+					-j * squareEdge
 					);
 					
 				// Change colour/style based on piece kind
@@ -185,14 +189,15 @@ CTetrisPane::DrawSelf() {
 	}
 	
 	::ForeColor(blackColor);
-		
+	
+	Rect boarderRect = gameRect;
+	MacInsetRect(&boarderRect, -1, -1);
+	
 	// Draws game boarder
-	::MacFrameRect(&gameRect);
+	::MacFrameRect(&boarderRect);
 	
 	// Draws frame boarder
 	::MacFrameRect(&frameRect);
-	
-	
 }
 
 // LListener
@@ -205,5 +210,7 @@ CTetrisPane::ListenToMessage( MessageT inMessage, void *ioParam ) {
 		// Render the board state out to buffer
 		game->RenderBoard(mBoardState);
 		
+		// Invalidate the drawing area
+		this->Refresh();
 	}
 }

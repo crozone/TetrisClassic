@@ -2,17 +2,34 @@
 #include "CTetrisPane.h"
 
 CTetrisGameRunnerAttachment::CTetrisGameRunnerAttachment()
-: LAttachment(msg_KeyPress)
+: LAttachment(msg_KeyPress), LPeriodical(), LBroadcaster(),
+	mInitialized(FALSE),
+	mGameActive(FALSE),
+	mLastUpdateTime(0),
+	mTimeRemainingOnTick(0),
+	mTetrisGame()
 {
-	AddRenderPanesAsListeners();
 }
 
 
 CTetrisGameRunnerAttachment::CTetrisGameRunnerAttachment(LStream*	inStream)
-	: LAttachment(inStream)
+	: LAttachment(inStream), LPeriodical(), LBroadcaster(),
+	mInitialized(FALSE),
+	mGameActive(FALSE),
+	mLastUpdateTime(0),
+	mTimeRemainingOnTick(0),
+	mTetrisGame()
 {
-	mMessage = msg_KeyPress;
-	AddRenderPanesAsListeners();
+	//mMessage = msg_KeyPress;
+	mMessage = msg_AnyMessage;
+}
+
+void
+CTetrisGameRunnerAttachment::EnsureInitialized() {
+	if(!mInitialized) {
+		AddRenderPanesAsListeners();
+		mInitialized = true;
+	}
 }
 
 // Assumes the attachable that this attachment is attached to
@@ -26,7 +43,7 @@ CTetrisGameRunnerAttachment::AddRenderPanesAsListeners() {
 	// The attachable is what this attachment is currently connected to
 	LAttachable* attachable = this->GetOwnerHost();
 	
-	// Try to cast the attachable to a View so the subpanes can be accessed
+	// The attachable is usually a Pane
 	LPane* pane = dynamic_cast<LPane*>(attachable);
 	
 	if(pane == nil) {
@@ -50,13 +67,16 @@ CTetrisGameRunnerAttachment::AttachTetrisPanesRecursively(LPane* pane) {
 	if (tetrisPane != nil) {			// Check first if this is the one
 		this->AddListener(tetrisPane);
 	} else {
+		// Check if this is a view, and if so recursively traverse 
 		LView* view = dynamic_cast<LView*>(pane);
-	
-		// Search all subpanes
-		TArrayIterator<LPane*> iterator(view->GetSubPanes());
-		LPane	*theSub;
-		while (iterator.Next(theSub)) {
-			AttachTetrisPanesRecursively(theSub);
+		if(view != nil) {
+			// Search all subpanes
+			TArray<LPane*>& subPanes = view->GetSubPanes();
+			TArrayIterator<LPane*> iterator(subPanes);
+			LPane	*theSub = nil;
+			while (iterator.Next(theSub)) {
+				AttachTetrisPanesRecursively(theSub);
+			}
 		}
 	}
 }
@@ -65,8 +85,15 @@ void
 CTetrisGameRunnerAttachment::ExecuteSelf(
 	MessageT	inMessage,
 	void*		ioParam)
-{	
+{
+	EnsureInitialized();
+
 	switch(inMessage) {
+		case 1001:
+			// New game command
+			NewGame();
+		break;
+	
 		case msg_KeyPress:
 			EventRecord* inKeyEventPtr = static_cast<EventRecord*>(ioParam);
 			HandleKeyPress(*inKeyEventPtr);
@@ -76,19 +103,27 @@ CTetrisGameRunnerAttachment::ExecuteSelf(
 	
 void
 CTetrisGameRunnerAttachment::NewGame() {
+	EnsureInitialized();
+
 	mTetrisGame = CTetrisGame::CTetrisGame(0);
 	mTimeRemainingOnTick = mTetrisGame.GetCurrentTickDelay();
 	mGameActive = TRUE;
+	
+	GameStateChanged();
 }
 
 void
 CTetrisGameRunnerAttachment::PauseGame() {
 	mGameActive = FALSE;
+	
+	GameStateChanged();
 }
 
 void
 CTetrisGameRunnerAttachment::ResumeGame() {
 	mGameActive = TRUE;
+	
+	GameStateChanged();
 }
 
 // LPeriodical
@@ -98,7 +133,7 @@ CTetrisGameRunnerAttachment::SpendTime(const EventRecord& inMacEvent) {
 	UInt32 timeDelta = currentTime - mLastUpdateTime;
 	mLastUpdateTime = currentTime;
 	
-	if(!mGameActive) {
+	if(!mGameActive || !mInitialized) {
 		return;
 	}
 	
@@ -136,6 +171,10 @@ Boolean
 CTetrisGameRunnerAttachment::HandleKeyPress( const EventRecord& inKeyEvent ) {
 	// what: Should be a keyDown event, or a key repeat event (autoKey)
 	if(inKeyEvent.what != keyDown && inKeyEvent.what != autoKey) {
+		return FALSE;
+	}
+	
+	if(!mGameActive || !mInitialized) {
 		return FALSE;
 	}
 	

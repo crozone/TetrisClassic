@@ -73,8 +73,8 @@ void
 TetrisPieces::StampPieceOntoBoard(
 	PieceKind::Type pieceKind,
 	PieceOrientation::Type orientation,
-	UInt8 xPosition,
-	UInt8 yPosition,
+	SInt8 xPosition,
+	SInt8 yPosition,
 	Boolean collidable,
 	Boolean ghost,
 	BlockKind::Type boardBuffer[20][10]) {
@@ -104,8 +104,8 @@ Boolean
 TetrisPieces::CheckCollisionWithBoard(
 	PieceKind::Type pieceKind,
 	PieceOrientation::Type orientation,
-	UInt8 xPosition,
-	UInt8 yPosition,
+	SInt8 xPosition,
+	SInt8 yPosition,
 	BlockKind::Type boardBuffer[20][10]) {
 	
 	// TODO: Make board width and height a constant
@@ -116,8 +116,8 @@ TetrisPieces::CheckCollisionWithBoard(
 	for(int j = 0; j < 4; j++) {
 		for(int i = 0; i < 4; i++) {
 			if(piecesArray[pieceIndex][orientationIndex][j][i]) {
-				int boardY = yPosition - j;
-				int boardX = xPosition + i;
+				SInt8 boardY = yPosition - j;
+				SInt8 boardX = xPosition + i;
 				if(boardY >= 0 && boardX >= 0 && boardX < 10) {
 					// If the block is above the board, it is not colliding.
 					if(boardY < 20) {
@@ -380,8 +380,8 @@ const Boolean TetrisPieces::piecesArray[8][4][4][4] = {
 		{
 			{0, 1, 0, 0},
 			{0, 1, 0, 0},
-			{0, 1, 0, 0},
-			{0, 1, 1, 0}
+			{0, 1, 1, 0},
+			{0, 0, 0, 0}
 		},
 		// 2
 		{

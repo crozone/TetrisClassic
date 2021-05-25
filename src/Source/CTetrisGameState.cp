@@ -7,6 +7,7 @@ CTetrisGameState::CTetrisGameState() :
 	mLevel(0),
 	mLinesCleared(0),
 	mGameOver(FALSE),
+	mQueueNewTurn(FALSE),
 	mCurrentPiece(PieceKind::None),
 	mCurrentPieceOrientation(PieceOrientation::Down),
 	mCurrentPieceXPosition(0),

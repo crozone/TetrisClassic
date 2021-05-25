@@ -23,7 +23,7 @@ protected:
 	Boolean mInitialized;
 	Boolean mGameActive;
 	UInt32 mLastUpdateTime;
-	SInt32 mTimeRemainingOnTick;
+	SInt32 mTimeElapsedOnTick;
 	CTetrisGame mTetrisGame;
 	
 	Boolean	HandleKeyPress(const EventRecord& inKeyEvent);

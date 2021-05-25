@@ -30,11 +30,15 @@
 
 const ResIDT	PPob_SampleWindow			= 128;
 const PaneIDT	Pane_StartButton			= 3;
-const PaneIDT	Pane_MessageCaption			= 4;
-const PaneIDT	Pane_CharCaption			= 5;
-const PaneIDT	Pane_CharCodeCaption		= 6;
-const PaneIDT	Pane_KeyCodeCaption			= 7;
+const PaneIDT	Pane_PauseButton			= 4;
+const PaneIDT	Pane_ResumeButton			= 5;
+const PaneIDT	Pane_MessageCaption			= 6;
+const PaneIDT	Pane_CharCaption			= 7;
+const PaneIDT	Pane_CharCodeCaption		= 8;
+const PaneIDT	Pane_KeyCodeCaption			= 9;
 const MessageT	msg_StartGame				= 1001;
+const MessageT	msg_PauseGame				= 1002;
+const MessageT	msg_ResumeGame				= 1003;
 
 
 
@@ -244,39 +248,22 @@ CBasicApp::ListenToMessage(
 	MessageT inMessage,
 	void *ioParam)
 {
-	switch (inMessage) {
-		case msg_ControlClicked:
-			// The ioParam on a Control Click message is the reference to the control
-			LControl* theControl = (LControl*)(ioParam);
-			ThrowIfNil_(theControl);
-			
-			if(theControl->GetPaneID() == Pane_StartButton) {
-				// Start button was pressed
-				
-				theControl->SetEnabled(false);
-			}
-		break;
-		case msg_StartGame:
-			LWindow* theMainWindow = this->mPrimaryWindow;
-			ThrowIfNil_(theMainWindow);
-
-			// Find the start button
-			LControl* theStartButton = dynamic_cast<LControl*>(theMainWindow->FindPaneByID(Pane_StartButton));
-			ThrowIfNil_(theStartButton);
-			
-			theStartButton->SetEnabled(false);
-			
-			// TODO: Get Tetris pane and start the game with current rules
-			//LCommander::GetTopCommander();
-			// 1001 = Begin new game
-			theMainWindow->ProcessCommand(1001, nil);
-			break;
-			
-		break;
-	}
-	
 	LWindow* theMainWindow = this->mPrimaryWindow;
 	ThrowIfNil_(theMainWindow);
+	
+	//LCommander* topCommander = LCommander::GetTopCommander();
+	//ThrowIfNil_(topCommander);
+			
+	switch (inMessage) {
+		case msg_StartGame:
+			// TODO: Pass a struct with game details into the ioparams
+			theMainWindow->ProcessCommand(msg_StartGame, nil);
+		break;
+		case msg_PauseGame:
+		case msg_ResumeGame:
+			theMainWindow->ProcessCommand(inMessage, nil);
+		break;
+	}
 	
 	// Find the message caption within this window
 	LCaption* theMessageCaption = dynamic_cast<LCaption*>(theMainWindow->FindPaneByID(Pane_MessageCaption));

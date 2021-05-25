@@ -37,7 +37,7 @@ CTetrisPane::~CTetrisPane() {
 // LPane
 void
 CTetrisPane::DrawSelf() {
-	// TODO: Make varialbe based on type and size of pane
+	// TODO: Make variable based on type and size of pane
 	UInt8 gameWidth = 10;
 	UInt8 gameHeight = 20;
 
@@ -49,7 +49,7 @@ CTetrisPane::DrawSelf() {
 	
 	// Define the rectangle in which the piece squares will be drawn
 	Rect gameRect = frameRect;
-	MacInsetRect(&gameRect, 2, 2);
+	MacInsetRect(&gameRect, 1, 1);
 	
 	UInt32 scaledSquareWidth = (gameRect.right - gameRect.left) / gameWidth;
 	UInt32 scaledSquareHeight = (gameRect.bottom - gameRect.top) / gameHeight;
@@ -64,6 +64,14 @@ CTetrisPane::DrawSelf() {
 	// a block
 	gameRect.right = gameRect.left + 10 * squareEdge;
 	gameRect.bottom = gameRect.top + 20 * squareEdge;
+	
+	// Move game rectangle into middle of pane rectangle
+	MacOffsetRect(&gameRect,
+		static_cast<short>(((frameRect.right - frameRect.left) / 2)
+		- ((gameRect.right - gameRect.left) / 2)),
+		static_cast<short>(((frameRect.bottom - frameRect.top) / 2)
+		- ((gameRect.bottom - gameRect.top) / 2))
+		);
 	
 	::PenNormal();
 	

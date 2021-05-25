@@ -6,7 +6,7 @@ CTetrisGameRunnerAttachment::CTetrisGameRunnerAttachment()
 	mInitialized(FALSE),
 	mGameActive(FALSE),
 	mLastUpdateTime(0),
-	mTimeRemainingOnTick(0),
+	mTimeElapsedOnTick(0),
 	mTetrisGame()
 {
 }
@@ -17,7 +17,7 @@ CTetrisGameRunnerAttachment::CTetrisGameRunnerAttachment(LStream*	inStream)
 	mInitialized(FALSE),
 	mGameActive(FALSE),
 	mLastUpdateTime(0),
-	mTimeRemainingOnTick(0),
+	mTimeElapsedOnTick(0),
 	mTetrisGame()
 {
 	//mMessage = msg_KeyPress;
@@ -86,14 +86,22 @@ CTetrisGameRunnerAttachment::ExecuteSelf(
 	MessageT	inMessage,
 	void*		ioParam)
 {
-	EnsureInitialized();
-
 	switch(inMessage) {
 		case 1001:
 			// New game command
 			NewGame();
 		break;
-	
+		case 1002:
+			// Pause game command
+			PauseGame();
+		break;
+		case 1003:
+			// Resume game command
+			ResumeGame();
+		break;
+		case msg_FinishCreate:
+			EnsureInitialized();
+			// The pane hierarchy has been created, we can initialize 
 		case msg_KeyPress:
 			EventRecord* inKeyEventPtr = static_cast<EventRecord*>(ioParam);
 			HandleKeyPress(*inKeyEventPtr);
@@ -103,10 +111,12 @@ CTetrisGameRunnerAttachment::ExecuteSelf(
 	
 void
 CTetrisGameRunnerAttachment::NewGame() {
-	EnsureInitialized();
+	if(!mInitialized) {
+		Throw_(-1);
+	}
 
 	mTetrisGame = CTetrisGame::CTetrisGame(0);
-	mTimeRemainingOnTick = mTetrisGame.GetCurrentTickDelay();
+	mTimeElapsedOnTick = 0;
 	mGameActive = TRUE;
 	StartRepeating();
 	
@@ -141,6 +151,8 @@ CTetrisGameRunnerAttachment::SpendTime(const EventRecord& inMacEvent) {
 	}
 	
 	if(timeDelta == 0) {
+		// Either the first time through SpendTime,
+		// or no time has passed.
 		return;
 	}
 	
@@ -148,26 +160,37 @@ CTetrisGameRunnerAttachment::SpendTime(const EventRecord& inMacEvent) {
 		// If the time delta was too large, assume the window was out of focus.
 		// Pause the game.
 		//PauseGame();
+		
+		// Just ignore this time delay
 		return;
 	}
 
-	mTimeRemainingOnTick -= timeDelta;
+	mTimeElapsedOnTick += timeDelta;
 	
-	while(mTimeRemainingOnTick < 0) {
-		// TODO: Move this tick delay somewhere else
+	while(TRUE) {
 		SInt32 tickDelay = mTetrisGame.GetCurrentTickDelay();
-		
-		if(tickDelay >= 0) {
-			mTimeRemainingOnTick += tickDelay;
-			mTetrisGame.DoGameTick();
-			GameStateChanged();
-		}
-		else {
-			// Infinite time, we shouldn't call game tick
-			mTimeRemainingOnTick = 0;
+	
+		if(tickDelay < 0) {
+			// Infinite tick
+			// Reset elapsed so that if the tick delay changes,
+			// we don't end up doing many game ticks in a row.
+			mTimeElapsedOnTick = 0;
 			break;
 		}
+		else if(mTimeElapsedOnTick >= tickDelay) {
+			mTimeElapsedOnTick -= tickDelay;
 		
+			if(mTetrisGame.DoGameTick()) {
+				GameStateChanged();
+			}
+			else {
+				// Game over
+				PauseGame();
+			}
+		}
+		else {
+			break;
+		}
 	}
 }
 
@@ -211,6 +234,7 @@ CTetrisGameRunnerAttachment::HandleKeyPress( const EventRecord& inKeyEvent ) {
 		case 'w':
 		case 'W':
 			if(mTetrisGame.DoPieceHardDrop()) {
+				mTimeElapsedOnTick = 0;
 				GameStateChanged();
 			}
 			return TRUE;
@@ -223,6 +247,7 @@ CTetrisGameRunnerAttachment::HandleKeyPress( const EventRecord& inKeyEvent ) {
 		case 's':
 		case 'S':
 			if(mTetrisGame.DoPieceSoftDrop()) {
+				mTimeElapsedOnTick = 0;
 				GameStateChanged();
 			}
 			return TRUE;
@@ -247,6 +272,7 @@ CTetrisGameRunnerAttachment::HandleKeyPress( const EventRecord& inKeyEvent ) {
 		case 'r':
 		case 'R':
 			if(mTetrisGame.DoPieceHold()) {
+				mTimeElapsedOnTick = 0;
 				GameStateChanged();
 			}
 			return TRUE;

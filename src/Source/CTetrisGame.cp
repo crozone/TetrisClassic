@@ -24,8 +24,13 @@ CTetrisGame::~CTetrisGame() {
 }
 
 Boolean
+CTetrisGame::IsAcceptingInput() {
+	return (!mState.mGameOver && !mState.mQueueNewTurn);
+}
+
+Boolean
 CTetrisGame::DoPieceLeft() {
-	if(mState.mGameOver) {
+	if(!IsAcceptingInput()) {
 		return FALSE;
 	}
 
@@ -48,7 +53,7 @@ CTetrisGame::DoPieceLeft() {
 				
 Boolean
 CTetrisGame::DoPieceRight() {
-	if(mState.mGameOver) {
+	if(!IsAcceptingInput()) {
 		return FALSE;
 	}
 
@@ -71,7 +76,7 @@ CTetrisGame::DoPieceRight() {
 
 Boolean
 CTetrisGame::DoPieceRotateCW() {
-	if(mState.mGameOver) {
+	if(!IsAcceptingInput()) {
 		return FALSE;
 	}
 	
@@ -97,7 +102,7 @@ CTetrisGame::DoPieceRotateCW() {
 				
 Boolean
 CTetrisGame::DoPieceRotateCCW() {
-	if(mState.mGameOver) {
+	if(!IsAcceptingInput()) {
 		return FALSE;
 	}
 
@@ -124,7 +129,7 @@ CTetrisGame::DoPieceRotateCCW() {
 // Move the piece down one				
 Boolean
 CTetrisGame::DoPieceSoftDrop() {
-	if(mState.mGameOver) {
+	if(!IsAcceptingInput()) {
 		return FALSE;
 	}
 
@@ -134,18 +139,15 @@ CTetrisGame::DoPieceSoftDrop() {
 		//       Many game rulesets reward points per soft-drop line.
 		
 		// softDropThisTurn++;
-		
-		return TRUE;
 	}
-	else {
-		return FALSE;
-	}
+	
+	return TRUE;
 }
 
 // Drop the piece until it hits the board
 Boolean
 CTetrisGame::DoPieceHardDrop() {
-	if(mState.mGameOver) {
+	if(!IsAcceptingInput()) {
 		return FALSE;
 	}
 
@@ -166,7 +168,7 @@ CTetrisGame::DoPieceHardDrop() {
 // Returns TRUE if successful, FALSE if hold was already used this turn.		
 Boolean
 CTetrisGame::DoPieceHold() {
-	if(mState.mGameOver) {
+	if(!IsAcceptingInput()) {
 		return FALSE;
 	}
 
@@ -194,6 +196,11 @@ CTetrisGame::DoPieceHold() {
 	else {
 		return FALSE;
 	}
+}
+
+Boolean
+CTetrisGame::IsGameOver() {
+	return mState.mGameOver;
 }
 
 
@@ -393,29 +400,15 @@ CTetrisGame::DoRowClears() {
 	return rowsCleared;
 }
 
-
-// Performs a game tick.
-//
-// Returns TRUE if the game is still running, FALSE if GAME OVER.				
 Boolean
-CTetrisGame::DoGameTick() {
-	// TODO: Implement animation frames.
-	// TODO: Disable the piece drop during animation frames.
-	
-	if(mState.mGameOver) {
-		return FALSE;
-	}
-	
-	// TODO: Check all blocks for animation flags and process them before
-	// doing any DoDrop()
-	
-	Boolean skipDrop = FALSE;
+CTetrisGame::ProcessFlaggedToClearBlocks() {
+	Boolean blocksProcessed = FALSE;
 	
 	for(int j = 20 - 1; j >= 0; j--) {
 		for(int i = 0; i < 10; i++) {
 			// Process any blocks that are flagged for clear
 			if(TetrisPieces::IsFlaggedForClear(mState.mBoardState[j][i])) {
-				skipDrop = TRUE;
+				blocksProcessed = TRUE;
 				UInt8 clearTicksLeft = TetrisPieces::GetClearCountdown(mState.mBoardState[j][i]);
 				
 				if(clearTicksLeft > 0) {
@@ -431,6 +424,24 @@ CTetrisGame::DoGameTick() {
 			}
 		}
 	}
+	
+	return blocksProcessed;
+}
+
+
+// Performs a game tick.
+//
+// Returns TRUE if the game is still running, FALSE if GAME OVER.				
+Boolean
+CTetrisGame::DoGameTick() {
+	// TODO: Implement animation frames.
+	// TODO: Disable the piece drop during animation frames.
+	
+	if(mState.mGameOver) {
+		return FALSE;
+	}
+	
+	Boolean skipDrop = ProcessFlaggedToClearBlocks();
 	
 	if(!skipDrop) {
 		if(mState.mQueueNewTurn) {
@@ -449,19 +460,13 @@ SInt32
 CTetrisGame::GetCurrentTickDelay() {
 	// TODO: Move this into an array and actually finish it
 	
-	Boolean animation = FALSE;
-	
-	for(int j = 0; j < 20; j++) {
-		for(int i = 0; i < 10; i++) {
-			if(TetrisPieces::IsFlaggedForClear(mState.mBoardState[j][i])) {
-				animation = TRUE;
-				break;
-			}
-		}
+	if(mState.mGameOver) {
+		return -1;
 	}
 	
-	if(animation) {
-		return 50;
+	// If a new turn is queued, it means we are in a line-clear animation
+	if(mState.mQueueNewTurn) {
+		return 10;
 	}
 	
 	if(mState.mLevel < 0) {

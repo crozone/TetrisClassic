@@ -34,6 +34,10 @@ public:
 				
 				Boolean		DoGameTick();
 				
+				Boolean		IsGameOver();
+				
+				Boolean		IsInAnimation();
+				
 				SInt32		GetCurrentTickDelay();
 				
 				void		RenderBoard(BlockKind::Type blockBuffer[20][10]);
@@ -55,9 +59,13 @@ protected:
 				
 				Boolean		DoDrop();
 				
+				Boolean		ProcessFlaggedToClearBlocks();
+				
 				Boolean		DropAndStampPiece();
 				
 				UInt8		DoRowClears();
+				
+				Boolean		IsAcceptingInput();
 
 				CTetrisGameState mState;
 };

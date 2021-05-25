@@ -35,8 +35,7 @@ protected:
 	void	NewGame();
 	void	PauseGame();
 	void	ResumeGame();
-	void	AddRenderPanesAsListeners();
-	void	AttachTetrisPanesRecursively(LPane* pane);
+	void	AddListenersRecursivelyFromHost();
 	
 	// LListener
 	virtual void	ListenToMessage(MessageT inMessage, void* ioParam);

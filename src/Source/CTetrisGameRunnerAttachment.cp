@@ -15,6 +15,10 @@
 
 #include "CTetrisGameRunnerAttachment.h"
 #include "CTetrisPane.h"
+#include "PaneHelpers.h"
+#include "TetrisMessage.h"
+
+using namespace PaneHelpers;
 
 CTetrisGameRunnerAttachment::CTetrisGameRunnerAttachment()
 : LAttachment(msg_AnyMessage), LPeriodical(), LBroadcaster(), LListener(),
@@ -41,7 +45,7 @@ CTetrisGameRunnerAttachment::CTetrisGameRunnerAttachment(LStream*	inStream)
 void
 CTetrisGameRunnerAttachment::EnsureInitialized() {
 	if(!mInitialized) {
-		AddRenderPanesAsListeners();
+		AddListenersRecursivelyFromHost();
 		mInitialized = true;
 	}
 }
@@ -53,7 +57,7 @@ CTetrisGameRunnerAttachment::EnsureInitialized() {
 // This method locates the TRPs and adds them as a listener to
 // the game runner broadcaster.
 void
-CTetrisGameRunnerAttachment::AddRenderPanesAsListeners() {
+CTetrisGameRunnerAttachment::AddListenersRecursivelyFromHost() {
 	// The attachable is the host to which this attachment is currently connected.
 	LAttachable* attachable = this->GetOwnerHost();
 	
@@ -65,9 +69,9 @@ CTetrisGameRunnerAttachment::AddRenderPanesAsListeners() {
 		return;
 	}
 	
-	AttachTetrisPanesRecursively(pane);
+	PaneHelpers::AttachBroadcasterToPaneListenersRecursively(this, pane);
 	
-	// Note: We currently rely on a side effect of the above call to AttachTetrisPanesRecursively
+	// Note: We currently rely on a side effect of the above call to AttachBroadcasterToPaneListenersRecursively
 	//       as an interim measure.
 	//
 	//       Since this attachment implements LListener and is attached to the parent pane,
@@ -79,48 +83,6 @@ CTetrisGameRunnerAttachment::AddRenderPanesAsListeners() {
 	//       Both the keypress handling, and even LPeriodic game updates, will be moved, however the code
 	//       will not need to be updated much since the BroadcastMessage() mechanism will remain the same.
 	
-}
-
-void
-CTetrisGameRunnerAttachment::AttachTetrisPanesRecursively(LPane* pane) {
-	// This is the recursive algorithm for finding panes,
-	// stolen from the LView FindPaneById code
-	
-	// Pane should not be nil at this point
-	ThrowIfNil_(pane);
-	
-	// Check the current pane to see if it is an LListener
-	LListener* listener = dynamic_cast<LListener*>(pane);
-	// If the pane is a listener, attach it.
-	if (listener != nil) {
-		this->AddListener(listener);
-	}
-	
-	// Check if any of the current pane's attachments are LListeners too, and attach those.
-	TArray<LAttachment*>* attachments = pane->GetAttachmentsList();
-	if(attachments != nil) {
-		TArrayIterator<LAttachment*> attachmentsIterator(*attachments);
-		LAttachment	*theAttachment = nil;
-		while (attachmentsIterator.Next(theAttachment)) {
-			LListener* attachmentListener = dynamic_cast<LListener*>(theAttachment);
-			if(attachmentListener != nil) {
-				this->AddListener(attachmentListener);
-			}
-		}
-	}
-	
-	
-	// Check if this is a view, and if so recursively traverse its subpanes.
-	LView* view = dynamic_cast<LView*>(pane);
-	if(view != nil) {
-		// Search all subpanes
-		TArray<LPane*>& subPanes = view->GetSubPanes();
-		TArrayIterator<LPane*> subPanesIterator(subPanes);
-		LPane	*theSub = nil;
-		while (subPanesIterator.Next(theSub)) {
-			AttachTetrisPanesRecursively(theSub);
-		}
-	}
 }
 
 
@@ -162,19 +124,19 @@ void
 CTetrisGameRunnerAttachment::HandleGameCommandMessage(MessageT inMessage, void *ioParam) {
 	switch(inMessage) {
 		// Game commands
-		case 1001:
+		case msg_TetrisNewGame:
 			// New game
 			NewGame();
 		break;
-		case 1002:
+		case msg_TetrisPauseGame:
 			// Pause game
 			PauseGame();
 		break;
-		case 1003:
+		case msg_TetrisResumeGame:
 			// Resume game
 			ResumeGame();
 		break;
-		case 1010:
+		case msg_TetrisGameTick:
 			// Game tick
 			if(mTetrisGame->DoGameTick()) {
 				GameStateChanged();
@@ -184,45 +146,45 @@ CTetrisGameRunnerAttachment::HandleGameCommandMessage(MessageT inMessage, void *
 				PauseGame();
 			}
 		break;
-		case 1011:
+		case msg_TetrisMovePieceLeft:
 			// Move piece left
 			if(mTetrisGame->DoPieceLeft()) {
 				GameStateChanged();
 			}
 		break;
-		case 1012:
+		case msg_TetrisMovePieceRight:
 			// Move piece right
 			if(mTetrisGame->DoPieceRight()) {
 				GameStateChanged();
 			}
 		break;
-		case 1013:
+		case msg_TetrisRotatePieceCCW:
 			// Rotate CCW
 			if(mTetrisGame->DoPieceRotateCCW()) {
 				GameStateChanged();
 			}
 		break;
-		case 1014:
+		case msg_TetrisRotatePieceCW:
 			// Rotate CW
 			if(mTetrisGame->DoPieceRotateCW()) {
 				GameStateChanged();
 			}
 		break;
-		case 1015:
+		case msg_TetrisSoftDropPiece:
 			// Soft Drop
 			if(mTetrisGame->DoPieceSoftDrop()) {
 				mTimeElapsedOnTick = 0;
 				GameStateChanged();
 			}
 		break;
-		case 1016:
+		case msg_TetrisHardDropPiece:
 			// Hard Drop
 			if(mTetrisGame->DoPieceHardDrop()) {
 				mTimeElapsedOnTick = 0;
 				GameStateChanged();
 			}
 		break;
-		case 1017:
+		case msg_TetrisHoldPiece:
 			// Hold piece
 			if(mTetrisGame->DoPieceHold()) {
 				mTimeElapsedOnTick = 0;
@@ -317,7 +279,7 @@ CTetrisGameRunnerAttachment::SpendTime(const EventRecord& inMacEvent) {
 			mTimeElapsedOnTick -= tickDelay;
 		
 			// Game tick
-			BroadcastMessage(1010, NULL);
+			BroadcastMessage(msg_TetrisGameTick, NULL);
 		}
 		else {
 			break;
@@ -328,7 +290,7 @@ CTetrisGameRunnerAttachment::SpendTime(const EventRecord& inMacEvent) {
 void
 CTetrisGameRunnerAttachment::GameStateChanged() {
 	if(mTetrisGame != NULL) {
-		BroadcastMessage(2000, mTetrisGame);
+		BroadcastMessage(msg_TetrisGameStateChanged, mTetrisGame);
 	}
 }
 
@@ -368,42 +330,42 @@ CTetrisGameRunnerAttachment::HandleKeyPress( const EventRecord& inKeyEvent ) {
 		case 'w':
 		case 'W':
 			// Hard drop
-			BroadcastMessage(1016, NULL);
+			BroadcastMessage(msg_TetrisHardDropPiece, NULL);
 			return TRUE;
 		case 'a':
 		case 'A':
 			// Piece left
-			BroadcastMessage(1011, NULL);
+			BroadcastMessage(msg_TetrisMovePieceLeft, NULL);
 			return TRUE;
 		case 's':
 		case 'S':
 			// Soft drop
-			BroadcastMessage(1015, NULL);
+			BroadcastMessage(msg_TetrisSoftDropPiece, NULL);
 			return TRUE;
 		case 'd':
 		case 'D':
 			// Piece right
-			BroadcastMessage(1012, NULL);
+			BroadcastMessage(msg_TetrisMovePieceRight, NULL);
 			return TRUE;
 		case 'q':
 		case 'Q':
 			// Piece rotate CCW
-			BroadcastMessage(1013, NULL);
+			BroadcastMessage(msg_TetrisRotatePieceCCW, NULL);
 			return TRUE;
 		case 'e':
 		case 'E':
 			// Piece rotate CW
-			BroadcastMessage(1014, NULL);
+			BroadcastMessage(msg_TetrisRotatePieceCW, NULL);
 			return TRUE;
 		case 'r':
 		case 'R':
 			// Hold piece
-			BroadcastMessage(1017, NULL);
+			BroadcastMessage(msg_TetrisHoldPiece, NULL);
 			return TRUE;
 		case 'n':
 		case 'N':
 			// For testing: Do a game tick manually
-			BroadcastMessage(1010, NULL);
+			BroadcastMessage(msg_TetrisGameTick, NULL);
 			return TRUE;
 	}
 	

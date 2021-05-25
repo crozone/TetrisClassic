@@ -24,7 +24,6 @@
 #include "CTetrisGameRunnerAttachment.h"
 #include "CTetrisControlAttachment.h"
 #include "CTetrisPane.h"
-#include "Random.h"
 
 // ---------------------------------------------------------------------------
 //	Constant declarations

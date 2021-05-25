@@ -1,6 +1,8 @@
 #include "PieceGenerationStrategy.h"
-#include "Random.h"
+#include "RandomHelpers.h"
 #include "TetrisPieces.h"
+
+using namespace RandomHelpers;
 
 UInt8
 PieceGenerationStrategy::GetPieceSetSize(PieceGenerationStrategy::Type pieceGenerationStrategy) {
@@ -27,7 +29,7 @@ PieceGenerationStrategy::GeneratePieceSet(
 	switch(pieceGenerationStrategy) {
 		case PieceGenerationStrategy::ClassicRandom:
 			PieceKind::Type randomPiece = TetrisPieces::GetPieceFromIndex(
-				Random::RandomRange(1, 7)
+				RandomRange(1, 7)
 			);
 			
 			setDestination[0] = randomPiece;
@@ -43,7 +45,7 @@ PieceGenerationStrategy::GeneratePieceSet(
 			int piecesGenerated = 0;
 			while(piecesGenerated < PieceGenerationStrategy::ModernPieceBagSetSize) {
 				PieceKind::Type randomPiece = TetrisPieces::GetPieceFromIndex(
-					Random::RandomRange(1, 7)
+					RandomRange(1, 7)
 				);
 				
 				// Check for collision with any of the pieces already generated

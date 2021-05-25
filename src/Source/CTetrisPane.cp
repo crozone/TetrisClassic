@@ -1,4 +1,18 @@
 // Tetris render pane implementation
+//
+// The purpose of CTetrisPane is to render graphics related to the Tetris game.
+// It listens to game update messages from CTetrisGameRunnerAttachment and
+// re-renders its own contents based upon its role and the game state.
+//
+// The role is set by the User Constant:
+//
+// 0: The pane will render the main Tetris game board.
+// 1: The pane will render the current hold piece.
+// >= 10: The pane will render one of the future pieces.
+//         The index of the future piece is equal to the User Constant - 10,
+//         for example, 10 will render the very next piece,
+//         13 will render the fourth next piece.
+//
 
 #include "CTetrisPane.h"
 
@@ -259,8 +273,7 @@ CTetrisPane::ListenToMessage(MessageT inMessage, void *ioParam) {
 		// TODO: Make this a proper enum
 		SInt32 tetrisPaneKind = this->GetUserCon();
 		
-		// If we are operating as a game board,
-		// render the board to our buffer
+		// Game board
 		if(tetrisPaneKind == 0) {
 			// Reinitialize the board buffer if the game board
 			// is a different dimension
@@ -277,6 +290,7 @@ CTetrisPane::ListenToMessage(MessageT inMessage, void *ioParam) {
 			// Invalidate the drawing area
 			this->Refresh();
 		}
+		// Hold piece window
 		else if(tetrisPaneKind == 1) {
 			UInt8 boardWidth = 4;
 			UInt8 boardHeight = 4;
@@ -291,6 +305,7 @@ CTetrisPane::ListenToMessage(MessageT inMessage, void *ioParam) {
 			// Invalidate the drawing area
 			this->Refresh();
 		}
+		// Next piece window
 		else if(tetrisPaneKind >= 10) {
 			SInt32 nextIndex = tetrisPaneKind - 10;
 			UInt8 boardWidth = 4;

@@ -1,8 +1,23 @@
+//
+// The purpose of CTetrisGameRunnerAttachment is to coordinate the high level game logic.
+// It is intended to be attached to a pane that contains subpains for the Tetris game elements.
+//
+// This attachment handles:
+//
+// * Key inputs for the game (TODO: Move this)
+// * Game command messages (start, stop, resume, move piece, do tick)
+// * Periodic game updates (by implementing LPeriodical)
+// * Broadcasts game updates to interested Listeners
+//    Any listeners that exist within subpains of the attached pane will be automatically and
+//    recursively attached as a broadcast listener
+//    (via AddRenderPanesAsListeners(), called in EnsureInitialized())
+//
+
 #include "CTetrisGameRunnerAttachment.h"
 #include "CTetrisPane.h"
 
 CTetrisGameRunnerAttachment::CTetrisGameRunnerAttachment()
-: LAttachment(msg_KeyPress), LPeriodical(), LBroadcaster(),
+: LAttachment(msg_AnyMessage), LPeriodical(), LBroadcaster(), LListener(),
 	mInitialized(FALSE),
 	mGameActive(FALSE),
 	mLastUpdateTime(0),
@@ -13,14 +28,13 @@ CTetrisGameRunnerAttachment::CTetrisGameRunnerAttachment()
 
 
 CTetrisGameRunnerAttachment::CTetrisGameRunnerAttachment(LStream*	inStream)
-	: LAttachment(inStream), LPeriodical(), LBroadcaster(),
+	: LAttachment(inStream), LPeriodical(), LBroadcaster(), LListener(),
 	mInitialized(FALSE),
 	mGameActive(FALSE),
 	mLastUpdateTime(0),
 	mTimeElapsedOnTick(0),
 	mTetrisGame(NULL)
 {
-	//mMessage = msg_KeyPress;
 	mMessage = msg_AnyMessage;
 }
 
@@ -40,7 +54,7 @@ CTetrisGameRunnerAttachment::EnsureInitialized() {
 // the game runner broadcaster.
 void
 CTetrisGameRunnerAttachment::AddRenderPanesAsListeners() {
-	// The attachable is what this attachment is currently connected to
+	// The attachable is the host to which this attachment is currently connected.
 	LAttachable* attachable = this->GetOwnerHost();
 	
 	// The attachable is usually a Pane
@@ -52,6 +66,19 @@ CTetrisGameRunnerAttachment::AddRenderPanesAsListeners() {
 	}
 	
 	AttachTetrisPanesRecursively(pane);
+	
+	// Note: We currently rely on a side effect of the above call to AttachTetrisPanesRecursively
+	//       as an interim measure.
+	//
+	//       Since this attachment implements LListener and is attached to the parent pane,
+	//       AttachTetrisPanesRecursively will actually subscribe this attachment to itself.
+	//       i.e. this attachment can send messages to itself via BroadcastMessage() like a loopback.
+	//
+	//       It is intended that all the code that needs to broadcast messages to this attachment
+	//       will eventually be moved into their own attachment, for greater separation of concerns.
+	//       Both the keypress handling, and even LPeriodic game updates, will be moved, however the code
+	//       will not need to be updated much since the BroadcastMessage() mechanism will remain the same.
+	
 }
 
 void
@@ -64,7 +91,8 @@ CTetrisGameRunnerAttachment::AttachTetrisPanesRecursively(LPane* pane) {
 	
 	// Check the current pane to see if it is an LListener
 	LListener* listener = dynamic_cast<LListener*>(pane);
-	if (listener != nil) {			// Check first if this is the one
+	// If the pane is a listener, attach it.
+	if (listener != nil) {
 		this->AddListener(listener);
 	}
 	
@@ -82,7 +110,7 @@ CTetrisGameRunnerAttachment::AttachTetrisPanesRecursively(LPane* pane) {
 	}
 	
 	
-	// Check if this is a view, and if so recursively traverse 
+	// Check if this is a view, and if so recursively traverse its subpanes.
 	LView* view = dynamic_cast<LView*>(pane);
 	if(view != nil) {
 		// Search all subpanes
@@ -95,6 +123,16 @@ CTetrisGameRunnerAttachment::AttachTetrisPanesRecursively(LPane* pane) {
 	}
 }
 
+
+// LListener
+void
+CTetrisGameRunnerAttachment::ListenToMessage(MessageT inMessage, void *ioParam) {
+	// All game commands fall between 1000 and 1999
+	if(inMessage >= 1000 && inMessage < 2000) {
+		HandleGameCommandMessage(inMessage, ioParam);
+	}
+}
+
 // LAttachment
 void
 CTetrisGameRunnerAttachment::ExecuteSelf(
@@ -102,25 +140,94 @@ CTetrisGameRunnerAttachment::ExecuteSelf(
 	void*		ioParam)
 {
 	switch(inMessage) {
-		case 1001:
-			// New game command
-			NewGame();
-		break;
-		case 1002:
-			// Pause game command
-			PauseGame();
-		break;
-		case 1003:
-			// Resume game command
-			ResumeGame();
-		break;
+		// UI messages
 		case msg_FinishCreate:
 			EnsureInitialized();
-			// The pane hierarchy has been created, we can initialize
+			// The pane hierarchy has been created, we can initialize now.
 		break;
+		// Keypress
 		case msg_KeyPress:
 			EventRecord* inKeyEventPtr = static_cast<EventRecord*>(ioParam);
 			HandleKeyPress(*inKeyEventPtr);
+		break;
+	}
+	
+	// All game commands fall between 1000 and 1999
+	if(inMessage >= 1000 && inMessage < 2000) {
+		HandleGameCommandMessage(inMessage, ioParam);
+	}
+}
+
+void	
+CTetrisGameRunnerAttachment::HandleGameCommandMessage(MessageT inMessage, void *ioParam) {
+	switch(inMessage) {
+		// Game commands
+		case 1001:
+			// New game
+			NewGame();
+		break;
+		case 1002:
+			// Pause game
+			PauseGame();
+		break;
+		case 1003:
+			// Resume game
+			ResumeGame();
+		break;
+		case 1010:
+			// Game tick
+			if(mTetrisGame->DoGameTick()) {
+				GameStateChanged();
+			}
+			else {
+				// Game over
+				PauseGame();
+			}
+		break;
+		case 1011:
+			// Move piece left
+			if(mTetrisGame->DoPieceLeft()) {
+				GameStateChanged();
+			}
+		break;
+		case 1012:
+			// Move piece right
+			if(mTetrisGame->DoPieceRight()) {
+				GameStateChanged();
+			}
+		break;
+		case 1013:
+			// Rotate CCW
+			if(mTetrisGame->DoPieceRotateCCW()) {
+				GameStateChanged();
+			}
+		break;
+		case 1014:
+			// Rotate CW
+			if(mTetrisGame->DoPieceRotateCW()) {
+				GameStateChanged();
+			}
+		break;
+		case 1015:
+			// Soft Drop
+			if(mTetrisGame->DoPieceSoftDrop()) {
+				mTimeElapsedOnTick = 0;
+				GameStateChanged();
+			}
+		break;
+		case 1016:
+			// Hard Drop
+			if(mTetrisGame->DoPieceHardDrop()) {
+				mTimeElapsedOnTick = 0;
+				GameStateChanged();
+			}
+		break;
+		case 1017:
+			// Hold piece
+			if(mTetrisGame->DoPieceHold()) {
+				mTimeElapsedOnTick = 0;
+				GameStateChanged();
+			}
 		break;
 	}
 }
@@ -209,13 +316,8 @@ CTetrisGameRunnerAttachment::SpendTime(const EventRecord& inMacEvent) {
 		else if(mTimeElapsedOnTick >= tickDelay) {
 			mTimeElapsedOnTick -= tickDelay;
 		
-			if(mTetrisGame->DoGameTick()) {
-				GameStateChanged();
-			}
-			else {
-				// Game over
-				PauseGame();
-			}
+			// Game tick
+			BroadcastMessage(1010, NULL);
 		}
 		else {
 			break;
@@ -229,7 +331,8 @@ CTetrisGameRunnerAttachment::GameStateChanged() {
 		BroadcastMessage(2000, mTetrisGame);
 	}
 }
-	
+
+// TODO: Move this into a Keypress handler attachment that is separate from this attachment.
 Boolean	
 CTetrisGameRunnerAttachment::HandleKeyPress( const EventRecord& inKeyEvent ) {
 	// what: Should be a keyDown event, or a key repeat event (autoKey)
@@ -264,54 +367,43 @@ CTetrisGameRunnerAttachment::HandleKeyPress( const EventRecord& inKeyEvent ) {
 	switch(charCode) {
 		case 'w':
 		case 'W':
-			if(mTetrisGame->DoPieceHardDrop()) {
-				mTimeElapsedOnTick = 0;
-				GameStateChanged();
-			}
+			// Hard drop
+			BroadcastMessage(1016, NULL);
 			return TRUE;
 		case 'a':
 		case 'A':
-			if(mTetrisGame->DoPieceLeft()) {
-				GameStateChanged();
-			}
+			// Piece left
+			BroadcastMessage(1011, NULL);
 			return TRUE;
 		case 's':
 		case 'S':
-			if(mTetrisGame->DoPieceSoftDrop()) {
-				mTimeElapsedOnTick = 0;
-				GameStateChanged();
-			}
+			// Soft drop
+			BroadcastMessage(1015, NULL);
 			return TRUE;
 		case 'd':
 		case 'D':
-			if(mTetrisGame->DoPieceRight()) {
-				GameStateChanged();
-			}
+			// Piece right
+			BroadcastMessage(1012, NULL);
 			return TRUE;
 		case 'q':
 		case 'Q':
-			if(mTetrisGame->DoPieceRotateCCW()) {
-				GameStateChanged();
-			}
+			// Piece rotate CCW
+			BroadcastMessage(1013, NULL);
 			return TRUE;
 		case 'e':
 		case 'E':
-			if(mTetrisGame->DoPieceRotateCW()) {
-				GameStateChanged();
-			}
+			// Piece rotate CW
+			BroadcastMessage(1014, NULL);
 			return TRUE;
 		case 'r':
 		case 'R':
-			if(mTetrisGame->DoPieceHold()) {
-				mTimeElapsedOnTick = 0;
-				GameStateChanged();
-			}
+			// Hold piece
+			BroadcastMessage(1017, NULL);
 			return TRUE;
 		case 'n':
 		case 'N':
 			// For testing: Do a game tick manually
-			mTetrisGame->DoGameTick();
-			GameStateChanged();
+			BroadcastMessage(1010, NULL);
 			return TRUE;
 	}
 	

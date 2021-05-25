@@ -1,4 +1,20 @@
+//
+// The purpose of the CTetrisControlAttachment is to turn a pane into a
+// text UI element for showing game status.
+//
+// The attached pane can select what role it wants with the User Constant field.
+// 1: The pane will act as a "Game Over" message.
+//     It will be hidden during play, and shown after the game has ended.
+// 2: The pane will act as a score display.
+// 3: The pane will show the lines cleared count.
+// 4: The pane will show the current game level.
+//
+// The attachment listens for messages broadcast from the CTetrisGameRunnerAttachment.
+// It is usually attached recursively when AttachTetrisPanesRecursively is called in CTetrisGameRunnerAttachment.
+//
+
 #include "CTetrisControlAttachment.h"
+
 
 CTetrisControlAttachment::CTetrisControlAttachment()
 : LAttachment(msg_KeyPress), LListener()
@@ -28,7 +44,7 @@ CTetrisControlAttachment::ListenToMessage(MessageT inMessage, void *ioParam) {
 		LPane* pane = dynamic_cast<LPane*>(attachable);
 	
 		if(pane == nil) {
-			// If we have no LPane host, there's nothing to do here.
+			// If we don't have an LPane host, there's nothing to do here.
 			return;
 		}
 		

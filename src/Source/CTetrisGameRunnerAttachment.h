@@ -7,6 +7,7 @@
 
 class	CTetrisGameRunnerAttachment :
 	public LAttachment,
+	public LListener,
 	public LPeriodical,
 	public LBroadcaster
 	{
@@ -27,6 +28,7 @@ protected:
 	CTetrisGame* mTetrisGame;
 	
 	Boolean	HandleKeyPress(const EventRecord& inKeyEvent);
+	void	HandleGameCommandMessage(MessageT inMessage, void* ioParam);
 	void	GameStateChanged();
 	
 	void	EnsureInitialized();
@@ -36,7 +38,8 @@ protected:
 	void	AddRenderPanesAsListeners();
 	void	AttachTetrisPanesRecursively(LPane* pane);
 	
-	
+	// LListener
+	virtual void	ListenToMessage(MessageT inMessage, void* ioParam);
 	// LAttachment
 	virtual void	ExecuteSelf(MessageT inMessage, void* ioParam);
 };

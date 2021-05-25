@@ -91,7 +91,7 @@ void
 CTetrisGameRunnerAttachment::ListenToMessage(MessageT inMessage, void *ioParam) {
 	// All game commands fall between 1000 and 1999
 	if(inMessage >= 1000 && inMessage < 2000) {
-		HandleGameCommandMessage(inMessage, ioParam);
+		HandleGameControlMessage(inMessage, ioParam);
 	}
 }
 
@@ -107,21 +107,19 @@ CTetrisGameRunnerAttachment::ExecuteSelf(
 			EnsureInitialized();
 			// The pane hierarchy has been created, we can initialize now.
 		break;
-		// Keypress
-		case msg_KeyPress:
-			EventRecord* inKeyEventPtr = static_cast<EventRecord*>(ioParam);
-			HandleKeyPress(*inKeyEventPtr);
-		break;
 	}
 	
-	// All game commands fall between 1000 and 1999
-	if(inMessage >= 1000 && inMessage < 2000) {
-		HandleGameCommandMessage(inMessage, ioParam);
-	}
+	// Handle game control messages
+	HandleGameControlMessage(inMessage, ioParam);
 }
 
 void	
-CTetrisGameRunnerAttachment::HandleGameCommandMessage(MessageT inMessage, void *ioParam) {
+CTetrisGameRunnerAttachment::HandleGameControlMessage(MessageT inMessage, void *ioParam) {
+	if(!mInitialized) {
+		return;
+	}
+
+	// Game state control commands
 	switch(inMessage) {
 		// Game commands
 		case msg_TetrisNewGame:
@@ -136,6 +134,14 @@ CTetrisGameRunnerAttachment::HandleGameCommandMessage(MessageT inMessage, void *
 			// Resume game
 			ResumeGame();
 		break;
+	}
+	
+	if(!mGameActive || mTetrisGame == NULL) {
+		return;
+	}
+	
+	// Game input control commands
+	switch(inMessage) {
 		case msg_TetrisGameTick:
 			// Game tick
 			if(mTetrisGame->DoGameTick()) {
@@ -292,82 +298,4 @@ CTetrisGameRunnerAttachment::GameStateChanged() {
 	if(mTetrisGame != NULL) {
 		BroadcastMessage(msg_TetrisGameStateChanged, mTetrisGame);
 	}
-}
-
-// TODO: Move this into a Keypress handler attachment that is separate from this attachment.
-Boolean	
-CTetrisGameRunnerAttachment::HandleKeyPress( const EventRecord& inKeyEvent ) {
-	// what: Should be a keyDown event, or a key repeat event (autoKey)
-	if(inKeyEvent.what != keyDown && inKeyEvent.what != autoKey) {
-		return FALSE;
-	}
-	
-	if(!mGameActive || !mInitialized || mTetrisGame == NULL) {
-		return FALSE;
-	}
-	
-	// message:
-	// Get the Character code and virtual key code from the low-order word.
-	// For Apple Desktop Bus keyboards, the low byte of the high-order word
-	// contains the ADB address of the keyboard where the keyboard event occured.
-	
-	// Get the character code and virtual key code
-	UInt8 charCode = inKeyEvent.message & charCodeMask;
-	UInt8 keyCode = inKeyEvent.message & keyCodeMask;
-	UInt8 adbAddr = inKeyEvent.message & adbAddrMask;
-	Boolean keyRepeat = inKeyEvent.what == autoKey;
-	
-	// when:
-	// The time when the event was posted, in ticks since system startup
-	
-	// where:
-	// For low level events (like keydown), contains the location of the
-	// mouse cursor in global coordinates.
-	// For high level events, contains the event ID.
-	
-	// TODO: Make keys configurable
-	switch(charCode) {
-		case 'w':
-		case 'W':
-			// Hard drop
-			BroadcastMessage(msg_TetrisHardDropPiece, NULL);
-			return TRUE;
-		case 'a':
-		case 'A':
-			// Piece left
-			BroadcastMessage(msg_TetrisMovePieceLeft, NULL);
-			return TRUE;
-		case 's':
-		case 'S':
-			// Soft drop
-			BroadcastMessage(msg_TetrisSoftDropPiece, NULL);
-			return TRUE;
-		case 'd':
-		case 'D':
-			// Piece right
-			BroadcastMessage(msg_TetrisMovePieceRight, NULL);
-			return TRUE;
-		case 'q':
-		case 'Q':
-			// Piece rotate CCW
-			BroadcastMessage(msg_TetrisRotatePieceCCW, NULL);
-			return TRUE;
-		case 'e':
-		case 'E':
-			// Piece rotate CW
-			BroadcastMessage(msg_TetrisRotatePieceCW, NULL);
-			return TRUE;
-		case 'r':
-		case 'R':
-			// Hold piece
-			BroadcastMessage(msg_TetrisHoldPiece, NULL);
-			return TRUE;
-		case 'n':
-		case 'N':
-			// For testing: Do a game tick manually
-			BroadcastMessage(msg_TetrisGameTick, NULL);
-			return TRUE;
-	}
-	
-	return FALSE;
 }

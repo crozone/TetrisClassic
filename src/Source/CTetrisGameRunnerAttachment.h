@@ -27,8 +27,7 @@ protected:
 	SInt32 mTimeElapsedOnTick;
 	CTetrisGame* mTetrisGame;
 	
-	Boolean	HandleKeyPress(const EventRecord& inKeyEvent);
-	void	HandleGameCommandMessage(MessageT inMessage, void* ioParam);
+	void	HandleGameControlMessage(MessageT inMessage, void* ioParam);
 	void	GameStateChanged();
 	
 	void	EnsureInitialized();

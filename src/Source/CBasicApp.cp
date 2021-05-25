@@ -22,8 +22,10 @@
 
 #include "CQuitOnCloseAttachment.h"
 #include "CTetrisGameRunnerAttachment.h"
+#include "CTetrisKeyHandlerAttachment.h"
 #include "CTetrisControlAttachment.h"
 #include "CTetrisPane.h"
+#include "TetrisMessage.h"
 
 // ---------------------------------------------------------------------------
 //	Constant declarations
@@ -36,10 +38,6 @@ const PaneIDT	Pane_MessageCaption			= 6;
 const PaneIDT	Pane_CharCaption			= 7;
 const PaneIDT	Pane_CharCodeCaption		= 8;
 const PaneIDT	Pane_KeyCodeCaption			= 9;
-const MessageT	msg_StartGame				= 1001;
-const MessageT	msg_PauseGame				= 1002;
-const MessageT	msg_ResumeGame				= 1003;
-
 
 
 // ===========================================================================
@@ -255,12 +253,12 @@ CBasicApp::ListenToMessage(
 	//ThrowIfNil_(topCommander);
 			
 	switch (inMessage) {
-		case msg_StartGame:
+		case msg_TetrisNewGame:
 			// TODO: Pass a struct with game details into the ioparams
-			theMainWindow->ProcessCommand(msg_StartGame, nil);
+			theMainWindow->ProcessCommand(msg_TetrisNewGame, nil);
 		break;
-		case msg_PauseGame:
-		case msg_ResumeGame:
+		case msg_TetrisPauseGame:
+		case msg_TetrisResumeGame:
 			theMainWindow->ProcessCommand(inMessage, nil);
 		break;
 	}
@@ -294,6 +292,7 @@ CBasicApp::RegisterClasses()
 	RegisterClass_(LStdButton);
 	RegisterClass_(CQuitOnCloseAttachment);
 	RegisterClass_(CTetrisGameRunnerAttachment);
+	RegisterClass_(CTetrisKeyHandlerAttachment);
 	RegisterClass_(CTetrisControlAttachment);
 	RegisterClass_(CTetrisPane);
 	RegisterClass_(LOffscreenView);

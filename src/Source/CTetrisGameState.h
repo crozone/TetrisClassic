@@ -43,7 +43,9 @@ public:
 				PieceKind::Type mCurrentHoldPiece;
 				Boolean mHoldPieceTriggeredThisTurn;
 
-				BlockKind::Type	mBoardState[20][10];
+				BlockKind::Type*	mBoardState;
+				UInt8	mBoardStateWidth;
+				UInt8	mBoardStateHeight;
 				
 				PieceGenerationStrategy::Type	mPieceGenerationStrategy;
 				
@@ -64,6 +66,7 @@ public:
 				PieceKind::Type	mPieceBag[PieceBagBufferCount];
 				
 protected:
+				void	InitializeBoardBuffer(UInt8 width, UInt8 height);
 
 };
 

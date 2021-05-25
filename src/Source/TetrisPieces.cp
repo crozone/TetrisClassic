@@ -125,7 +125,9 @@ TetrisPieces::StampPieceOntoBoard(
 	SInt8 yPosition,
 	Boolean collidable,
 	Boolean ghost,
-	BlockKind::Type boardBuffer[20][10]) {
+	BlockKind::Type* boardBuffer,
+	UInt8 boardBufferWidth,
+	UInt8 boardBufferHeight) {
 	
 	// TODO: Make board width and height a constant
 	
@@ -135,12 +137,12 @@ TetrisPieces::StampPieceOntoBoard(
 	
 	for(int j = 0; j < 4; j++) {
 		int boardY = yPosition - j;
-		if(boardY >= 0 && boardY < 20) {
+		if(boardY >= 0 && boardY < boardBufferHeight) {
 			for(int i = 0; i < 4; i++) {
 				int boardX = xPosition + i;
-				if(boardX >= 0 && boardX < 10) {
+				if(boardX >= 0 && boardX < boardBufferWidth) {
 					if(piecesArray[pieceIndex][orientationIndex][j][i]) {
-						boardBuffer[boardY][boardX] = blockKind;
+						boardBuffer[boardY * boardBufferWidth + boardX] = blockKind;
 					}
 				}
 			}
@@ -154,7 +156,9 @@ TetrisPieces::CheckCollisionWithBoard(
 	PieceOrientation::Type orientation,
 	SInt8 xPosition,
 	SInt8 yPosition,
-	BlockKind::Type boardBuffer[20][10]) {
+	BlockKind::Type* boardBuffer,
+	UInt8 boardBufferWidth,
+	UInt8 boardBufferHeight) {
 	
 	// TODO: Make board width and height a constant
 	
@@ -166,14 +170,14 @@ TetrisPieces::CheckCollisionWithBoard(
 			if(piecesArray[pieceIndex][orientationIndex][j][i]) {
 				SInt8 boardY = yPosition - j;
 				SInt8 boardX = xPosition + i;
-				if(boardY >= 0 && boardX >= 0 && boardX < 10) {
+				if(boardY >= 0 && boardX >= 0 && boardX < boardBufferWidth) {
 					// If the block is above the board, it is not colliding.
-					if(boardY < 20) {
+					if(boardY < boardBufferHeight) {
 						// The block is within the limits of the board array,
 						// check for a collision with the current piece block and
 						// block on the game board
 									
-						Boolean collidable = IsBlockCollidable(boardBuffer[boardY][boardX]);
+						Boolean collidable = IsBlockCollidable(boardBuffer[boardY * boardBufferWidth + boardX]);
 					
 						if(collidable) {
 							// We have a collision with an existing collidable block on the board

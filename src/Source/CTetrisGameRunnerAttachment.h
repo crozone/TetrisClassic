@@ -24,7 +24,7 @@ protected:
 	Boolean mGameActive;
 	UInt32 mLastUpdateTime;
 	SInt32 mTimeElapsedOnTick;
-	CTetrisGame mTetrisGame;
+	CTetrisGame* mTetrisGame;
 	
 	Boolean	HandleKeyPress(const EventRecord& inKeyEvent);
 	void	GameStateChanged();

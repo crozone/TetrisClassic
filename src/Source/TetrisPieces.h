@@ -53,14 +53,18 @@ public:
 				SInt8 yPosition,
 				Boolean collidable,
 				Boolean ghost,
-				BlockKind::Type boardBuffer[20][10]);
+				BlockKind::Type* boardBuffer,
+				UInt8 boardBufferWidth,
+				UInt8 boardBufferHeight);
 				
 	static	Boolean	CheckCollisionWithBoard(
 				PieceKind::Type pieceKind,
 				PieceOrientation::Type orientation,
 				SInt8 xPosition,
 				SInt8 yPosition,
-				BlockKind::Type boardBuffer[20][10]);
+				BlockKind::Type* boardBuffer,
+				UInt8 boardBufferWidth,
+				UInt8 boardBufferHeight);
 
 protected:
 	// [Piece][Rotation][y][x]

@@ -36,8 +36,11 @@ public:
 	virtual void			ListenToMessage( MessageT inMessage, void *ioParam );
 
 protected:
-	// TODO: Make pointer and malloc depending on pane type
-	BlockKind::Type	mBoardState[20][10];
+	void	InitializeBuffer(UInt8 width, UInt8 height);
+	
+	UInt8	mBufferWidth;
+	UInt8	mBufferHeight;
+	BlockKind::Type*	mBuffer;
 };
 
 #endif // _H_CTetrisPane

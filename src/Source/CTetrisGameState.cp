@@ -15,19 +15,35 @@ CTetrisGameState::CTetrisGameState() :
 	mCurrentHoldPiece(PieceKind::None),
 	mHoldPieceTriggeredThisTurn(FALSE),
 	mPieceGenerationStrategy(PieceGenerationStrategy::ClassicRandom),
-	mCurrentPieceBagCount(0)
+	mCurrentPieceBagCount(0),
+	mBoardStateWidth(0),
+	mBoardStateHeight(0),
+	mBoardState(NULL)
 	
 {
-	for(int j = 0; j < 20; j++) {
-		for(int i = 0; i < 10; i++) {
-			mBoardState[j][i] = BlockKind::None;
-		}
-	}
+	// TODO: Different sized Tetris boards based on ruleset?
+	InitializeBoardBuffer(10, 20);
+	
 	for(int i = 0; i < PieceBagBufferCount; i++) {
 		mPieceBag[i] = PieceKind::None;
 	}
 }
 
-CTetrisGameState::~CTetrisGameState() {
+void
+CTetrisGameState::InitializeBoardBuffer(UInt8 width, UInt8 height) {
+	mBoardStateWidth = width;
+	mBoardStateHeight = height;
+	
+	mBoardState = new BlockKind::Type[width * height];
+	ThrowIfNil_(mBoardState);
+	
+	for(int j = 0; j < height; j++) {
+		for(int i = 0; i < width; i++) {
+			mBoardState[j * width + i] = BlockKind::None;
+		}
+	}
+}
 
+CTetrisGameState::~CTetrisGameState() {
+	delete[] mBoardState;
 }

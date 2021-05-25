@@ -8,39 +8,55 @@ CTetrisPane::CTetrisPane()
 }
 
 CTetrisPane::CTetrisPane(const SPaneInfo &inPaneInfo)
-: LPane::LPane(inPaneInfo) {
-	// Initialize board buffer
-	for(int j = 0; j < 20; j++) {
-		for(int i = 0; i < 10; i++) {
-			mBoardState[j][i] = BlockKind::None;
-		}
-	}
+: LPane::LPane(inPaneInfo),
+	mBuffer(NULL),
+	mBufferWidth(0),
+	mBufferHeight(0)
+{
+	InitializeBuffer(10, 20);
 }
 
 CTetrisPane::CTetrisPane(LStream *inStream)
-: LPane::LPane(inStream) {
-	// TODO: Figure out how to deal with different Tetris pane types
-	// with different sizes
+: LPane::LPane(inStream),
+	mBuffer(NULL),
+	mBufferWidth(0),
+	mBufferHeight(0)
+{	
+	// Initialize board buffer.
+	// This is just a best guess as to the board size based on the current mode
+	// this pane is in (for a game board, the standard size is 10x20).
+	// If the board is later sent through in a more exotic size, it will be reinitialized.
+	if(this->GetUserCon() == 0) {
+		// Game board
+		InitializeBuffer(10, 20);
+	}
+	else if(this->GetUserCon() == 1) {
+		// Hold piece
+		InitializeBuffer(4, 4);
+	}
+}
+
+void
+CTetrisPane::InitializeBuffer(UInt8 width, UInt8 height) {
+	mBufferWidth = width;
+	mBufferHeight = height;
 	
-	// Initialize board buffer
-	for(int j = 0; j < 20; j++) {
-		for(int i = 0; i < 10; i++) {
-			mBoardState[j][i] = BlockKind::None;
+	mBuffer = new BlockKind::Type[height * width];
+	ThrowIfNil_(mBuffer);
+	for(int j = 0; j < height; j++) {
+		for(int i = 0; i < width; i++) {
+			mBuffer[j * width + i] = BlockKind::None;
 		}
 	}
 }
 
 CTetrisPane::~CTetrisPane() {
-	
+	delete[] mBuffer;
 }
 
 // LPane
 void
 CTetrisPane::DrawSelf() {
-	// TODO: Make variable based on type and size of pane
-	UInt8 gameWidth = 10;
-	UInt8 gameHeight = 20;
-
 	Rect frameRect;
 	// CalcLocalFrameRect returns the paneÕs frame
 	// as a QuickDraw rectangle in local coordinates
@@ -51,8 +67,8 @@ CTetrisPane::DrawSelf() {
 	Rect gameRect = frameRect;
 	MacInsetRect(&gameRect, 1, 1);
 	
-	UInt32 scaledSquareWidth = (gameRect.right - gameRect.left) / gameWidth;
-	UInt32 scaledSquareHeight = (gameRect.bottom - gameRect.top) / gameHeight;
+	UInt32 scaledSquareWidth = (gameRect.right - gameRect.left) / mBufferWidth;
+	UInt32 scaledSquareHeight = (gameRect.bottom - gameRect.top) / mBufferHeight;
 	
 	UInt32 squareEdge = scaledSquareWidth < scaledSquareHeight
 						? scaledSquareWidth : scaledSquareHeight;
@@ -62,8 +78,8 @@ CTetrisPane::DrawSelf() {
 						
 	// Tweak game rectangle to match exactly the width and height of
 	// a block
-	gameRect.right = gameRect.left + 10 * squareEdge;
-	gameRect.bottom = gameRect.top + 20 * squareEdge;
+	gameRect.right = gameRect.left + mBufferWidth * squareEdge;
+	gameRect.bottom = gameRect.top + mBufferHeight * squareEdge;
 	
 	// Move game rectangle into middle of pane rectangle
 	MacOffsetRect(&gameRect,
@@ -88,9 +104,9 @@ CTetrisPane::DrawSelf() {
 	//MacInsetRect(&basePieceRect, 1, 1);
 	MacOffsetRect(&basePieceRect, gameRect.left, gameRect.bottom - squareEdge);
 	
-	for(SInt32 j = 0; j < gameHeight; j++) {
-		for(SInt32 i = 0; i < gameWidth; i++) {
-			BlockKind::Type currentBlock = mBoardState[j][i];
+	for(SInt32 j = 0; j < mBufferHeight; j++) {
+		for(SInt32 i = 0; i < mBufferWidth; i++) {
+			BlockKind::Type currentBlock = mBuffer[j * mBufferWidth + i];
 			
 			PieceKind::Type pieceKind = TetrisPieces::GetPieceFromBlock(currentBlock);
 			Boolean blockCollidable = TetrisPieces::IsBlockCollidable(currentBlock);
@@ -227,11 +243,57 @@ CTetrisPane::ListenToMessage(MessageT inMessage, void *ioParam) {
 	if(inMessage == 2000) {
 		// ioParam is a TetrisGame
 		CTetrisGame* game = static_cast<CTetrisGame*>(ioParam);
+		ThrowIfNil_(game);
 		
-		// Render the board state out to buffer
-		game->RenderBoard(mBoardState);
+		// TODO: Make this a proper enum
+		SInt32 tetrisPaneKind = this->GetUserCon();
 		
-		// Invalidate the drawing area
-		this->Refresh();
+		// If we are operating as a game board,
+		// render the board to our buffer
+		if(tetrisPaneKind == 0) {
+			// Reinitialize the board buffer if the game board
+			// is a different dimension
+			UInt8 boardWidth = game->GetBoardWidth();
+			UInt8 boardHeight = game->GetBoardHeight();
+			
+			if(boardWidth != mBufferWidth || boardHeight != mBufferHeight) {
+				InitializeBuffer(boardWidth, boardHeight);
+			}
+			
+			// Render the game board
+			game->RenderBoard(mBuffer, mBufferWidth, mBufferHeight);
+			
+			// Invalidate the drawing area
+			this->Refresh();
+		}
+		else if(tetrisPaneKind == 1) {
+			UInt8 boardWidth = 4;
+			UInt8 boardHeight = 4;
+			
+			if(boardWidth != mBufferWidth || boardHeight != mBufferHeight) {
+				InitializeBuffer(boardWidth, boardHeight);
+			}
+			
+			// Render the game board
+			game->RenderHoldPiece(mBuffer, mBufferWidth, mBufferHeight);
+			
+			// Invalidate the drawing area
+			this->Refresh();
+		}
+		else if(tetrisPaneKind >= 10) {
+			SInt32 nextIndex = tetrisPaneKind - 10;
+			UInt8 boardWidth = 4;
+			UInt8 boardHeight = 4;
+			
+			if(boardWidth != mBufferWidth || boardHeight != mBufferHeight) {
+				InitializeBuffer(boardWidth, boardHeight);
+			}
+			
+			// Render the game board
+			game->RenderBagPiece(nextIndex, mBuffer, mBufferWidth, mBufferHeight);
+			
+			// Invalidate the drawing area
+			this->Refresh();
+		}
 	}
 }

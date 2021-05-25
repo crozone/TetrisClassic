@@ -40,16 +40,20 @@ public:
 				
 				SInt32		GetCurrentTickDelay();
 				
-				void		RenderBoard(BlockKind::Type blockBuffer[20][10]);
+				UInt8		GetBoardWidth();
 				
-				void		RenderHoldPiece(BlockKind::Type blockBuffer[4][4]);
+				UInt8		GetBoardHeight();
+				
+				void		RenderBoard(BlockKind::Type* blockBuffer, UInt8 bufferWidth, UInt8 bufferHeight);
+				
+				void		RenderHoldPiece(BlockKind::Type* blockBuffer, UInt8 bufferWidth, UInt8 bufferHeight);
 
-				void		RenderBagPiece(UInt8 index, BlockKind::Type blockBuffer[4][4]);
+				void		RenderBagPiece(UInt8 index, BlockKind::Type* blockBuffer, UInt8 bufferWidth, UInt8 bufferHeight);
 				
 				CTetrisGameState*	GetState();
 
 protected:
-				void		StartNewTurn(PieceKind::Type pieceKind);
+				void		StartNewTurn(PieceKind::Type pieceKind, Boolean resetHold);
 				
 				void		StartNextTurn();
 				

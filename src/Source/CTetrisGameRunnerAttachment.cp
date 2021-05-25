@@ -7,7 +7,7 @@ CTetrisGameRunnerAttachment::CTetrisGameRunnerAttachment()
 	mGameActive(FALSE),
 	mLastUpdateTime(0),
 	mTimeElapsedOnTick(0),
-	mTetrisGame()
+	mTetrisGame(NULL)
 {
 }
 
@@ -18,7 +18,7 @@ CTetrisGameRunnerAttachment::CTetrisGameRunnerAttachment(LStream*	inStream)
 	mGameActive(FALSE),
 	mLastUpdateTime(0),
 	mTimeElapsedOnTick(0),
-	mTetrisGame()
+	mTetrisGame(NULL)
 {
 	//mMessage = msg_KeyPress;
 	mMessage = msg_AnyMessage;
@@ -62,21 +62,35 @@ CTetrisGameRunnerAttachment::AttachTetrisPanesRecursively(LPane* pane) {
 	// Pane should not be nil at this point
 	ThrowIfNil_(pane);
 	
-	// Check the current pane to see if it is a Tetris Render Pane
-	CTetrisPane* tetrisPane = dynamic_cast<CTetrisPane*>(pane);
-	if (tetrisPane != nil) {			// Check first if this is the one
-		this->AddListener(tetrisPane);
-	} else {
-		// Check if this is a view, and if so recursively traverse 
-		LView* view = dynamic_cast<LView*>(pane);
-		if(view != nil) {
-			// Search all subpanes
-			TArray<LPane*>& subPanes = view->GetSubPanes();
-			TArrayIterator<LPane*> iterator(subPanes);
-			LPane	*theSub = nil;
-			while (iterator.Next(theSub)) {
-				AttachTetrisPanesRecursively(theSub);
+	// Check the current pane to see if it is an LListener
+	LListener* listener = dynamic_cast<LListener*>(pane);
+	if (listener != nil) {			// Check first if this is the one
+		this->AddListener(listener);
+	}
+	
+	// Check if any of the current pane's attachments are LListeners too, and attach those.
+	TArray<LAttachment*>* attachments = pane->GetAttachmentsList();
+	if(attachments != nil) {
+		TArrayIterator<LAttachment*> attachmentsIterator(*attachments);
+		LAttachment	*theAttachment = nil;
+		while (attachmentsIterator.Next(theAttachment)) {
+			LListener* attachmentListener = dynamic_cast<LListener*>(theAttachment);
+			if(attachmentListener != nil) {
+				this->AddListener(attachmentListener);
 			}
+		}
+	}
+	
+	
+	// Check if this is a view, and if so recursively traverse 
+	LView* view = dynamic_cast<LView*>(pane);
+	if(view != nil) {
+		// Search all subpanes
+		TArray<LPane*>& subPanes = view->GetSubPanes();
+		TArrayIterator<LPane*> subPanesIterator(subPanes);
+		LPane	*theSub = nil;
+		while (subPanesIterator.Next(theSub)) {
+			AttachTetrisPanesRecursively(theSub);
 		}
 	}
 }
@@ -115,7 +129,11 @@ CTetrisGameRunnerAttachment::NewGame() {
 		Throw_(-1);
 	}
 
-	mTetrisGame = CTetrisGame::CTetrisGame(0);
+	if(mTetrisGame != nil) {
+		delete mTetrisGame;
+	}
+
+	mTetrisGame = new CTetrisGame(0);
 	mTimeElapsedOnTick = 0;
 	mGameActive = TRUE;
 	StartRepeating();
@@ -125,14 +143,23 @@ CTetrisGameRunnerAttachment::NewGame() {
 
 void
 CTetrisGameRunnerAttachment::PauseGame() {
-	mGameActive = FALSE;
+	if(!mInitialized || mTetrisGame == NULL) {
+		return;
+	}
+	
 	StopRepeating();
+	mGameActive = FALSE;
+	mLastUpdateTime = 0;
 	
 	GameStateChanged();
 }
 
 void
 CTetrisGameRunnerAttachment::ResumeGame() {
+	if(!mInitialized || mTetrisGame == NULL) {
+		return;
+	}
+	
 	mGameActive = TRUE;
 	StartRepeating();
 	
@@ -146,7 +173,7 @@ CTetrisGameRunnerAttachment::SpendTime(const EventRecord& inMacEvent) {
 	UInt32 timeDelta = mLastUpdateTime == 0 ? 0 : currentTime - mLastUpdateTime;
 	mLastUpdateTime = currentTime;
 	
-	if(!mGameActive || !mInitialized) {
+	if(!mGameActive || !mInitialized || mTetrisGame == NULL) {
 		return;
 	}
 	
@@ -168,7 +195,7 @@ CTetrisGameRunnerAttachment::SpendTime(const EventRecord& inMacEvent) {
 	mTimeElapsedOnTick += timeDelta;
 	
 	while(TRUE) {
-		SInt32 tickDelay = mTetrisGame.GetCurrentTickDelay();
+		SInt32 tickDelay = mTetrisGame->GetCurrentTickDelay();
 	
 		if(tickDelay < 0) {
 			// Infinite tick
@@ -180,7 +207,7 @@ CTetrisGameRunnerAttachment::SpendTime(const EventRecord& inMacEvent) {
 		else if(mTimeElapsedOnTick >= tickDelay) {
 			mTimeElapsedOnTick -= tickDelay;
 		
-			if(mTetrisGame.DoGameTick()) {
+			if(mTetrisGame->DoGameTick()) {
 				GameStateChanged();
 			}
 			else {
@@ -196,7 +223,9 @@ CTetrisGameRunnerAttachment::SpendTime(const EventRecord& inMacEvent) {
 
 void
 CTetrisGameRunnerAttachment::GameStateChanged() {
-	BroadcastMessage(2000, &mTetrisGame);
+	if(mTetrisGame != NULL) {
+		BroadcastMessage(2000, mTetrisGame);
+	}
 }
 	
 Boolean	
@@ -206,7 +235,7 @@ CTetrisGameRunnerAttachment::HandleKeyPress( const EventRecord& inKeyEvent ) {
 		return FALSE;
 	}
 	
-	if(!mGameActive || !mInitialized) {
+	if(!mGameActive || !mInitialized || mTetrisGame == NULL) {
 		return FALSE;
 	}
 	
@@ -233,45 +262,45 @@ CTetrisGameRunnerAttachment::HandleKeyPress( const EventRecord& inKeyEvent ) {
 	switch(charCode) {
 		case 'w':
 		case 'W':
-			if(mTetrisGame.DoPieceHardDrop()) {
+			if(mTetrisGame->DoPieceHardDrop()) {
 				mTimeElapsedOnTick = 0;
 				GameStateChanged();
 			}
 			return TRUE;
 		case 'a':
 		case 'A':
-			if(mTetrisGame.DoPieceLeft()) {
+			if(mTetrisGame->DoPieceLeft()) {
 				GameStateChanged();
 			}
 			return TRUE;
 		case 's':
 		case 'S':
-			if(mTetrisGame.DoPieceSoftDrop()) {
+			if(mTetrisGame->DoPieceSoftDrop()) {
 				mTimeElapsedOnTick = 0;
 				GameStateChanged();
 			}
 			return TRUE;
 		case 'd':
 		case 'D':
-			if(mTetrisGame.DoPieceRight()) {
+			if(mTetrisGame->DoPieceRight()) {
 				GameStateChanged();
 			}
 			return TRUE;
 		case 'q':
 		case 'Q':
-			if(mTetrisGame.DoPieceRotateCCW()) {
+			if(mTetrisGame->DoPieceRotateCCW()) {
 				GameStateChanged();
 			}
 			return TRUE;
 		case 'e':
 		case 'E':
-			if(mTetrisGame.DoPieceRotateCW()) {
+			if(mTetrisGame->DoPieceRotateCW()) {
 				GameStateChanged();
 			}
 			return TRUE;
 		case 'r':
 		case 'R':
-			if(mTetrisGame.DoPieceHold()) {
+			if(mTetrisGame->DoPieceHold()) {
 				mTimeElapsedOnTick = 0;
 				GameStateChanged();
 			}
@@ -279,7 +308,7 @@ CTetrisGameRunnerAttachment::HandleKeyPress( const EventRecord& inKeyEvent ) {
 		case 'n':
 		case 'N':
 			// For testing: Do a game tick manually
-			mTetrisGame.DoGameTick();
+			mTetrisGame->DoGameTick();
 			GameStateChanged();
 			return TRUE;
 	}

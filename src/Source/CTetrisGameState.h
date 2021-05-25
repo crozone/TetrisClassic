@@ -27,6 +27,8 @@ public:
 							// Tracks total lines cleared this game
 				UInt32		mLinesCleared;
 				
+				UInt32		mLinesRemainingOnLevel;
+				
 							// If true, the game is over and will not respond to input
 				Boolean		mGameOver;
 				

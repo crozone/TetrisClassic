@@ -190,15 +190,12 @@ CTetrisGame::DoPieceHold() {
 		
 		if(currentHoldPiece == PieceKind::None) {
 			// Hold was empty, so new piece is from the top of the piece queue
-			// TODO: Implement DequeueNextPiece() and fix this.
-			
 			PieceKind::Type nextPiece = GetNextPiece();
 			StartNewTurn(nextPiece, FALSE);
 		}
 		else {
 			// Hold was not empty, so new piece is the existing hold piece
-			PieceKind::Type holdPiece = currentHoldPiece;
-			StartNewTurn(holdPiece, FALSE);
+			StartNewTurn(currentHoldPiece, FALSE);
 		}
 		
 		return TRUE;
@@ -218,14 +215,12 @@ CTetrisGame::IsGameOver() {
 // and regenerate the piece bag if necessary.
 PieceKind::Type
 CTetrisGame::GetNextPiece() {
-	// If the bag is empty, fill it.
+	// Generate more of the piece bag, if necessary
+	UpdatePieceBag();
+	
 	if(mState.mCurrentPieceBagCount == 0) {
-		UpdatePieceBag();
-		
-		if(mState.mCurrentPieceBagCount == 0) {
-			// Sanity check
-			Throw_(-1);
-		}
+		// Sanity check that we now have pieces.
+		Throw_(-1);
 	}
 	
 	// Get the top piece from the piece bag
@@ -300,15 +295,19 @@ CTetrisGame::StartNextTurn() {
 Boolean
 CTetrisGame::DoDrop() {
 	Boolean collision = DropAndStampPiece();
-	UInt8 rowsCleared = DoRowClears();
 	
 	if(collision) {
-		// TODO: Trigger scoring for placing a piece down
+		UInt8 rowsCleared = DoRowClears();
+	
+		// TODO: Score drop?
 		
 		if(rowsCleared == 0) {
 			StartNextTurn();
 		}
 		else {
+			// Score rows cleared
+			ScoreRowsCleared(rowsCleared);
+		
 			// Clear the current piece while the rowsCleared animation triggers
 			StartNewTurn(PieceKind::None, FALSE);
 		
@@ -491,46 +490,102 @@ CTetrisGame::GetCurrentTickDelay() {
 		return 10;
 	}
 	
+	
+	// Gameboy timings are in frames per line, the GB runs at 59.73fps.
+	// To get milliseconds per line, we divide by 60fps and then multiply by 1000ms.
+	
+	UInt32 gbLevelTickDelays[21] = {
+		53 * 1000 / 60,
+		49 * 1000 / 60,
+		45 * 1000 / 60,
+		41 * 1000 / 60,
+		37 * 1000 / 60,
+		33 * 1000 / 60 ,
+		28 * 1000 / 60,
+		22 * 1000 / 60,
+		17 * 1000 / 60,
+		11 * 1000 / 60,
+		10 * 1000 / 60,
+		9 * 1000 / 60,
+		8 * 1000 / 60,
+		7 * 1000 / 60,
+		6 * 1000 / 60,
+		6 * 1000 / 60,
+		5 * 1000 / 60,
+		5 * 1000 / 60,
+		4 * 1000 / 60,
+		4 * 1000 / 60,
+		3 * 1000 / 60
+	};
+	
 	if(mState.mLevel < 0) {
 		// Infinite timeout
 		return -1;
 	}
-	else if(mState.mLevel == 0) {
-		return 53 * 100 / 60;
-	}
-	else if(mState.mLevel == 1) {
-		return 49 * 100 / 60;
-	}
-	else if(mState.mLevel == 2) {
-		return 45 * 100 / 60;
-	}
-	else if(mState.mLevel == 3) {
-		return 41 * 100 / 60;
-	}
-	else if(mState.mLevel == 4) {
-		return 37 * 100 / 60;
-	}
-	else if(mState.mLevel == 5) {
-		return 33 * 100 / 60;
-	}
-	else if(mState.mLevel == 6) {
-		return 28 * 100 / 60;
-	}
-	else if(mState.mLevel == 7) {
-		
-	}
-	else if(mState.mLevel == 8) {
 	
+	UInt32 msDelay = (mState.mLevel > 20) ? gbLevelTickDelays[20] : gbLevelTickDelays[mState.mLevel];
+	
+	// Return value is in hundredths of a second, so divide ms value by 10
+	return msDelay / 10;
+}
+
+void
+CTetrisGame::ScoreRowsCleared(UInt8 linesCleared) {
+	// Update total lines cleared
+	mState.mLinesCleared += linesCleared;
+	
+	// Update lines left on the current level
+	mState.mLinesRemainingOnLevel -= linesCleared;
+	
+	// TODO: Allow points and level progression to be altered by ruleset
+	
+	// Check if the current level should advance
+		// TODO
+	
+	// Reward points based on the number of lines cleared
+	
+	// Original Nintendo Scoring System
+	// Single:	40
+	// Double:	100
+	// Triple:	300
+	// Tetris:	1200
+	UInt32 linePoints = 0;
+	if(linesCleared == 1) {
+		linePoints = 40;
 	}
-	else if(mState.mLevel == 9) {
-	
+	else if(linesCleared == 2) {
+		linePoints = 100;
 	}
-	else {
-	
+	else if(linesCleared == 3) {
+		linePoints = 300;
+	}
+	else if(linesCleared >= 4) {
+		linePoints = 1200;
 	}
 	
+	// Points rewarded increases with level
+	linePoints *= (mState.mLevel + 1);
 	
-	return 100;
+	mState.mScore += linePoints;
+}
+				
+void
+CTetrisGame::ScoreHardDrop(UInt8 linesDropped) {
+	// For now, treat these like a soft drop (since Nintendo scoring system does not recognise hard drops)
+	ScoreSoftDrop(linesDropped);
+}
+				
+void
+CTetrisGame::ScoreSoftDrop(UInt8 linesDropped) {
+	// Original Nintendo Scoring System
+	// One point for each line continuously soft-dropped.
+	
+	mState.mScore += linesDropped;
+}
+				
+void
+CTetrisGame::ScoreNaturalDrop() {
+
 }
 
 UInt8
@@ -603,16 +658,29 @@ CTetrisGame::RenderBoard(BlockKind::Type* blockBuffer, UInt8 bufferWidth, UInt8 
 }
 
 void
-CTetrisGame::RenderHoldPiece(BlockKind::Type* blockBuffer, UInt8 bufferWidth, UInt8 bufferHeight) {
+CTetrisGame::RenderSingleDisplayPiece(
+	PieceKind::Type piece,
+	BlockKind::Type* blockBuffer,
+	UInt8 bufferWidth,
+	UInt8 bufferHeight)
+{
 	if(bufferWidth < 4 || bufferHeight < 4) {
 		Throw_(-1);
 	}
 	
+	// Erase the current buffer
+	for(int j = 0; j < bufferHeight; j++) {
+		for(int i = 0; i < bufferWidth; i++) {
+			blockBuffer[j * bufferWidth + i] = BlockKind::None;
+		}
+	}
+	
+	// Stamp piece
 	TetrisPieces::StampPieceOntoBoard(
-		mState.mCurrentHoldPiece,
+		piece,
 		PieceOrientation::Down,
 		0,
-		0,
+		3,
 		TRUE,
 		FALSE,
 		blockBuffer,
@@ -621,27 +689,19 @@ CTetrisGame::RenderHoldPiece(BlockKind::Type* blockBuffer, UInt8 bufferWidth, UI
 }
 
 void
+CTetrisGame::RenderHoldPiece(BlockKind::Type* blockBuffer, UInt8 bufferWidth, UInt8 bufferHeight) {
+	RenderSingleDisplayPiece(mState.mCurrentHoldPiece, blockBuffer, bufferWidth, bufferHeight);
+}
+
+void
 CTetrisGame::RenderBagPiece(UInt8 index, BlockKind::Type* blockBuffer, UInt8 bufferWidth, UInt8 bufferHeight) {
-	if(bufferWidth < mState.mBoardStateWidth || bufferHeight < mState.mBoardStateHeight) {
-		Throw_(-1);
-	}
-	
 	PieceKind::Type piece = PieceKind::None;
 	
 	if(index < mState.mCurrentPieceBagCount) {
 		piece = mState.mPieceBag[index];
 	}
 	
-	TetrisPieces::StampPieceOntoBoard(
-		piece,
-		PieceOrientation::Down,
-		0,
-		0,
-		TRUE,
-		FALSE,
-		blockBuffer,
-		bufferWidth,
-		bufferHeight);
+	RenderSingleDisplayPiece(piece, blockBuffer, bufferWidth, bufferHeight);
 }
 
 CTetrisGameState*	

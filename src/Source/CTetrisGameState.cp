@@ -6,6 +6,7 @@ CTetrisGameState::CTetrisGameState() :
 	mScore(0),
 	mLevel(0),
 	mLinesCleared(0),
+	mLinesRemainingOnLevel(0),
 	mGameOver(FALSE),
 	mQueueNewTurn(FALSE),
 	mCurrentPiece(PieceKind::None),

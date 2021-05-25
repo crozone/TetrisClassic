@@ -26,11 +26,12 @@ CTetrisPane::CTetrisPane(LStream *inStream)
 	// This is just a best guess as to the board size based on the current mode
 	// this pane is in (for a game board, the standard size is 10x20).
 	// If the board is later sent through in a more exotic size, it will be reinitialized.
-	if(this->GetUserCon() == 0) {
+	SInt32 tetrisPaneKind = this->GetUserCon();
+	if(tetrisPaneKind == 0) {
 		// Game board
 		InitializeBuffer(10, 20);
 	}
-	else if(this->GetUserCon() == 1) {
+	else if(tetrisPaneKind == 1 || tetrisPaneKind >= 10) {
 		// Hold piece
 		InitializeBuffer(4, 4);
 	}

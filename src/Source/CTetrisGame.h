@@ -53,6 +53,8 @@ public:
 				CTetrisGameState*	GetState();
 
 protected:
+				void		RenderSingleDisplayPiece(PieceKind::Type piece, BlockKind::Type* blockBuffer, UInt8 bufferWidth, UInt8 bufferHeight);
+
 				void		StartNewTurn(PieceKind::Type pieceKind, Boolean resetHold);
 				
 				void		StartNextTurn();
@@ -70,6 +72,14 @@ protected:
 				UInt8		DoRowClears();
 				
 				Boolean		IsAcceptingInput();
+				
+				void		ScoreRowsCleared(UInt8 linesCleared);
+				
+				void		ScoreHardDrop(UInt8 linesDropped);
+				
+				void		ScoreSoftDrop(UInt8 linesDropped);
+				
+				void		ScoreNaturalDrop();
 
 				CTetrisGameState mState;
 };

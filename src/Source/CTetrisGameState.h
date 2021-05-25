@@ -27,7 +27,7 @@ public:
 				UInt32		mScore;
 				UInt32		mLevel;
 				UInt32		mLinesCleared;
-				UInt32		mGameTime;
+				Boolean		mGameOver;
 	
 				PieceKind::Type	mCurrentPiece;
 				PieceOrientation::Type		mCurrentPieceOrientation;

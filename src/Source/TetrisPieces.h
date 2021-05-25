@@ -2,45 +2,9 @@
 #define _H_TetrisPieces
 #pragma once
 
-// If we had C++11 we could use enum class, but we have C++98, so we have to make do.
-
-struct PieceKind {
-	enum Type {
-		None			=	0,		// Transparent
-		I				=	1,		// Cyan
-		O				=	2,		// Yellow
-		T				=	3,		// Purple
-		S				=	4,		// Green
-		Z				=	5,		// Red
-		J				=	6,		// Blue
-		L				=	7		// Orange
-	};
-};
-
-struct BlockKind {
-	enum Type {
-		None			=	0,		// Transparent
-		I				=	1,		// Cyan
-		O				=	2,		// Yellow
-		T				=	3,		// Purple
-		S				=	4,		// Green
-		Z				=	5,		// Red
-		J				=	6,		// Blue
-		L				=	7,		// Orange
-		PieceKindMask	=	7,		// 00000111
-		CollidableFlag	=	8,		// 00001000
-		GhostFlag		=	16		// 00010000
-	};
-};
-
-struct PieceOrientation {
-	enum Type {
-		Down = 0,
-		Right = 1,
-		Up = 2,
-		Left = 3
-	};
-};
+#include "PieceKind.h"
+#include "BlockKind.h"
+#include "PieceOrientation.h"
 
 class TetrisPieces {
 
@@ -58,6 +22,10 @@ public:
 	static	Boolean IsBlockCollidable(BlockKind::Type blockKind);
 
 	static	Boolean	IsBlockGhost(BlockKind::Type blockKind);
+	
+	static	PieceOrientation::Type	RotateCW(PieceOrientation::Type orientation);
+	
+	static	PieceOrientation::Type	RotateCCW(PieceOrientation::Type orientation);
 	
 	static	void	RenderPiece(
 				PieceKind::Type pieceKind,

@@ -17,7 +17,7 @@ CTetrisGame::InitializeGame(UInt32 startLevel) {
 	// Setup new state
 	CTetrisGameState newState;
 	newState.mLevel = startLevel;
-	//newState.
+	newState.mGameOver = FALSE;
 	
 }
 	
@@ -49,27 +49,57 @@ CTetrisGame::DoPieceRight() {
 		mState.mCurrentPieceXPosition++;
 	}
 }
-				
+
 void
-CTetrisGame::DoPieceSoftDrop() {
-	// Move the piece down if it won't collide with anything
-	if(!DoDropCheck()) {
-		mState.mCurrentPieceYPosition--;
+CTetrisGame::DoPieceRotateCW() {
+	// Rotate the piece clockwise if it won't collide with anything
+	
+	PieceOrientation::Type orientation = PieceOrientation::RotateCW(mState.mCurrentPieceOrientation);
+	
+	if(!TetrisPieces::CheckCollisionWithBoard(
+		mState.mCurrentPiece,
+		orientation,
+		mState.mCurrentPieceXPosition,
+		mState.mCurrentPieceYPosition,
+		mState.mBoardState)) {
 		
-		// TODO: Add to soft-drop counter for scoring purposes.
-		//       Many game rulesets reward points per soft-drop line.
-		
-		// softDropThisTurn++;
+		mState.mCurrentPieceOrientation = orientation;
 	}
 }
 				
 void
-CTetrisGame::DoPieceFastDrop() {
+CTetrisGame::DoPieceRotateCCW() {
+	// Rotate the piece counter-clockwise if it won't collide with anything
+	
+	PieceOrientation::Type orientation = PieceOrientation::RotateCCW(mState.mCurrentPieceOrientation);
+	
+	if(!TetrisPieces::CheckCollisionWithBoard(
+		mState.mCurrentPiece,
+		orientation,
+		mState.mCurrentPieceXPosition,
+		mState.mCurrentPieceYPosition,
+		mState.mBoardState)) {
+		
+		mState.mCurrentPieceOrientation = orientation;
+	}
+}
+				
+void
+CTetrisGame::DoPieceSoftDrop() {
+	if(!DoDrop()) {
+		
+		// TODO: Add to soft-drop counter for scoring purposes.
+		//       Many game rulesets reward points per soft-drop line.
+		
+		// softDropThisTurnn++;
+	}
+}
+				
+void
+CTetrisGame::DoPieceHardDrop() {
 	// Move the piece down until it collides with something.
 	
-	while(!DoDropCheck()) {
-		mState.mCurrentPieceYPosition--;
-		
+	while(!DoDrop()) {	
 		// TODO: Add to hard-drop counter for scoring purposes.
 		//       Many game rulesets reward points per hard-drop line
 			
@@ -110,27 +140,68 @@ CTetrisGame::DoPieceHold() {
 	}
 }
 
-// Returns TRUE if successful, FALSE if piece was on top of existing blocks.
-// FALSE indicates GAME OVER.
-Boolean
+void
 CTetrisGame::StartNewTurn(PieceKind::Type pieceKind) {
+	// Set piece to initial position
 	mState.mCurrentPiece = pieceKind;
 	mState.mCurrentPieceOrientation = PieceOrientation::Down;
 	mState.mCurrentPieceXPosition = 3;
 	mState.mCurrentPieceYPosition = 20;
+}
+
+// Starts a new turn with the next piece from the piece queue
+void
+CTetrisGame::StartNextTurn() {
+	// TODO: Get the next piece from the piece queue
+	//
+	// PieceKind::Type pieceKind = GetNextPiece();
 	
-	// TODO: Check if piece is colliding with current piece. If so, return FALSE
-	return TRUE;
+	// StartNewTurn(pieceKind);
 }
 
 //
 // Checks if a piece has a collision immediately under it and if so,
 // stamps the piece to the board.
 //
+// Returns TRUE if a collision occured, FALSE if no collision occured.
+//
 Boolean
-CTetrisGame::DoDropCheck() {
-	// Check if piece has collision immediately underneath it
+CTetrisGame::DoDrop() {
+	// Check if piece is already colliding with the board.
+	// This indicates GAME OVER.
+	
 	if(TetrisPieces::CheckCollisionWithBoard(
+		mState.mCurrentPiece,
+		mState.mCurrentPieceOrientation,
+		mState.mCurrentPieceXPosition,
+		mState.mCurrentPieceYPosition,
+		mState.mBoardState)) {
+		
+		// Piece has collided
+		
+		// Stamp the piece onto the board
+		TetrisPieces::StampPieceOntoBoard(
+			mState.mCurrentPiece,
+			mState.mCurrentPieceOrientation,
+			mState.mCurrentPieceXPosition,
+			mState.mCurrentPieceYPosition,
+			TRUE,
+			FALSE,
+			mState.mBoardState);
+		
+		// Set game over
+		mState.mGameOver = TRUE;
+		
+		// Start the next turn.
+		// (Not strictly necessary, but the GameBoy version does this
+		// to show yet another piece over the top of the current piece)
+		
+		StartNextTurn();	
+		
+		return TRUE;
+	}
+	// Check if piece has collision immediately underneath it
+	else if(TetrisPieces::CheckCollisionWithBoard(
 		mState.mCurrentPiece,
 		mState.mCurrentPieceOrientation,
 		mState.mCurrentPieceXPosition,
@@ -154,24 +225,35 @@ CTetrisGame::DoDropCheck() {
 		// (Maybe do this externally to this function,
 		// based upon the return value, for more control?)
 		
+		// Start the next turn.
+		StartNextTurn();
+		
 		return TRUE;
 	}
 	else {
+		// Move piece down by one row
+		mState.mCurrentPieceYPosition--;
+	
 		return FALSE;
 	}
 }
-				
-void
+
+
+// Performs a game tick.
+//
+// Returns TRUE if the game is still running, FALSE if GAME OVER.				
+Boolean
 CTetrisGame::DoGameTick() {
 	// TODO: Implement animation frames.
 	// TODO: Disable the piece drop during animation frames.
 	
-	// Gravity
-	if(!DoDropCheck()) {
-		mState.mCurrentPieceYPosition--;
+	if(mState.mGameOver) {
+		return FALSE;
 	}
 	
+	DoDrop();
 	
+	return TRUE;
 }
 				
 UInt32

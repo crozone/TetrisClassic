@@ -11,6 +11,7 @@ class CTetrisGame
 {
 
 public:
+
 							CTetrisGame();
 
 							~CTetrisGame();
@@ -21,17 +22,17 @@ public:
 				
 				void		DoPieceRight();
 				
+				void		DoPieceRotateCW();
+				
+				void		DoPieceRotateCCW();
+				
 				void		DoPieceSoftDrop();
 				
-				void		DoPieceFastDrop();
+				void		DoPieceHardDrop();
 				
 				Boolean		DoPieceHold();
 				
-				Boolean		StartNewTurn(PieceKind::Type pieceKind);
-				
-				Boolean		DoDropCheck();
-				
-				void		DoGameTick();
+				Boolean		DoGameTick();
 				
 				UInt32		GetCurrentTickDelay();
 				
@@ -40,6 +41,12 @@ public:
 				CTetrisGameState*	GetState();
 
 protected:
+				void		StartNewTurn(PieceKind::Type pieceKind);
+				
+				void		StartNextTurn();
+				
+				Boolean		DoDrop();
+
 				CTetrisGameState mState;
 };
 

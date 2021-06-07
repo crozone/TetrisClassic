@@ -17,7 +17,11 @@ const MessageT	msg_TetrisSoftDropPiece			= 1015;
 const MessageT	msg_TetrisHardDropPiece			= 1016;
 const MessageT	msg_TetrisHoldPiece				= 1017;
 
-const MessageT msg_TetrisGameStateChanged		= 2000; // CTetrisGame*
+const MessageT	msg_TetrisGameStateChanged		= 2000; // CTetrisGame*
+
+// Setup Window Messages
+const MessageT	msg_SetupWindowNewGameClick		= 3000;
+const MessageT	msg_SetupWindowViewHighScoresClick	= 3001;
 
 
 #endif // _H_TetrisMessage

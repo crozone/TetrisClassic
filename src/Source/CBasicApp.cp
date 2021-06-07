@@ -31,6 +31,7 @@
 #include "CMessageBusAttachment.h"
 #include "CTetrisPane.h"
 #include "TetrisMessage.h"
+#include "CTetrisGameRuleset.h"
 
 // ---------------------------------------------------------------------------
 //	Constant declarations
@@ -272,6 +273,21 @@ CBasicApp::ListenToMessage(
 	MessageT inMessage,
 	void *ioParam)
 {
+	//
+	// This method contains most of the "glue code" that manages the
+	// transition between the different top level game windows.
+	//
+	//
+	// For example:
+	//
+	// * It handles the transition from the game setup window to the game window,
+	//   and starts the game
+	// * It handles the transition on a game over to the high score entry window
+	//   and then backto the game setup window 
+	// * It handles the transition from the game setup window to the high score
+	//   entry window
+	//
+
 	LWindow* theMainWindow = this->mPrimaryWindow;
 	ThrowIfNil_(theMainWindow);
 	
@@ -279,13 +295,45 @@ CBasicApp::ListenToMessage(
 	//ThrowIfNil_(topCommander);
 			
 	switch (inMessage) {
-		case msg_TetrisNewGame:
+		//case msg_TetrisNewGame:
 			// TODO: Pass a struct with game details into the ioparams
-			theMainWindow->ProcessCommand(msg_TetrisNewGame, nil);
-		break;
-		case msg_TetrisPauseGame:
-		case msg_TetrisResumeGame:
-			theMainWindow->ProcessCommand(inMessage, nil);
+		//	theMainWindow->ProcessCommand(msg_TetrisNewGame, nil);
+		//break;
+		//case msg_TetrisPauseGame:
+		//case msg_TetrisResumeGame:
+		//	theMainWindow->ProcessCommand(inMessage, nil);
+		//break;
+		case msg_SetupWindowNewGameClick:
+			// TODO:
+			//  * Get the current settings from the setup window
+			//  * Create and populate game settings struct
+			//  * Hide setup window
+			//  * Create and show game window
+			//     + Game window interally sets up child windows?
+			//  * Send msg_TetrisNewGame command to game window with settings struct
+			
+			// Create the ruleset
+			CTetrisGameRuleset gameRuleset = CTetrisGameRuleset();
+			
+			// Populate with rules
+			gameRuleset.mStartingLevel = 7;
+			
+			// Hide the setup window
+			this->mPrimaryWindow->Hide();
+			
+			// Create game window
+			LWindow* theGameWindow = LWindow::CreateWindow(PPob_SampleWindow, this);
+			ThrowIfNil_(theGameWindow);
+			
+			// Link all controls in the window to the application listener
+			UReanimator::LinkListenerToBroadcasters(this, theGameWindow, PPob_SampleWindow);
+			
+			this->mPrimaryWindow = theGameWindow;
+			
+			theGameWindow->Show();
+			
+			// Start the game, sending the game ruleset to the handlers
+			theGameWindow->ProcessCommand(msg_TetrisNewGame, &gameRuleset);
 		break;
 	}
 	
@@ -319,6 +367,17 @@ CBasicApp::RegisterClasses()
 	RegisterClass_(LOffscreenView);
 	RegisterClass_(LActiveScroller);
 	
+	//
+	// UControlRegistry::RegisterClasses() handles the registration of all of the
+	// "Appearance" control panes.
+	//
+	// This includes setting up specific backing implementations for each of the controls,
+	// depending on which implementation is best suited for the current platform.
+	//
+	// The backing implementations differ depending on what macOS version
+	// the application is running on, and whether or not the Display Manager(?)
+	// is available.
+	//
 	UControlRegistry::RegisterClasses();
 	
 	//RegisterClass_(LControlPane);

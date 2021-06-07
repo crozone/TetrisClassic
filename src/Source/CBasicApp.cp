@@ -20,6 +20,7 @@
 #include <UControlRegistry.h>
 #include <LSlider.h>
 #include <LCheckbox.h>
+#include <LPopupButton.h>
 #include <UAttachments.h>
 
 // The following header files are included so the classes within them can be added with
@@ -340,6 +341,29 @@ CBasicApp::ListenToMessage(
 			gameRuleset.mPieceBagLookahead = nextPiecesSlider->GetValue();
 			
 			// TODO: Rotation System
+			LPopupButton* rotationSystemPopup = dynamic_cast<LPopupButton*>(
+				this->mSetupWindow->FindPaneByID(21) // TODO: Move to constant
+			);
+			ThrowIfNil_(rotationSystemPopup);
+			
+			switch(rotationSystemPopup->GetValue()) {
+				case 1:
+					gameRuleset.mScoringSystem = TetrisScoringSystem::OriginalNintendo;
+					break;
+				case 2:
+					gameRuleset.mScoringSystem = TetrisScoringSystem::TetrisGuidelinesCompatible;
+					break;
+				case 3:
+					gameRuleset.mScoringSystem = TetrisScoringSystem::OriginalBPS;
+					break;
+				case 4:
+					gameRuleset.mScoringSystem = TetrisScoringSystem::OriginalSega;
+					break;
+				default:
+					Throw_(10); // TODO: Move to constant
+				break;
+			}
+			
 			// TODO: Scoring System
 			
 			

@@ -4,6 +4,7 @@
 
 #include <LAttachment.h>
 #include "CTetrisGame.h"
+#include "CTetrisGameRuleset.h"
 
 class	CTetrisGameRunnerAttachment :
 	public LAttachment,
@@ -31,7 +32,8 @@ protected:
 	void	GameStateChanged();
 	
 	void	EnsureInitialized();
-	void	NewGame();
+	void	SetupGame(CTetrisGameRuleset ruleset);
+	void	StartGame();
 	void	PauseGame();
 	void	ResumeGame();
 	

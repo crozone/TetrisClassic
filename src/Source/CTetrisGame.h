@@ -51,6 +51,8 @@ public:
 
 				void		RenderBagPiece(UInt8 index, BlockKind::Type* blockBuffer, UInt8 bufferWidth, UInt8 bufferHeight);
 				
+				void		ResetState();
+				
 				CTetrisGameState*	GetState();
 				
 				CTetrisGameRuleset*	GetRuleset();

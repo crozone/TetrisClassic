@@ -38,7 +38,15 @@ protected:
 	
 			void			RegisterClasses();
 			
+			void			SwitchPrimaryWindowTo(LWindow* window);
+			
 			LWindow*		mPrimaryWindow;
+			
+			LWindow*		mSetupWindow;
+			
+			LWindow*		mGameWindow;
+			
+			// LWindow*		mHighScoresWindow;
 };
 
 #endif // _H_CBasicApp

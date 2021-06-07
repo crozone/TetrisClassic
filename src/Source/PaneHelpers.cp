@@ -1,7 +1,30 @@
-#include "PaneHelpers.h"
 #include <stdlib.h>
+#include "PaneHelpers.h"
+#include "CMessageBusAttachment.h"
 
 using namespace PaneHelpers;
+
+void
+PaneHelpers::AttachListenerToMessageBusOnPane(
+	LListener* listener,
+	LPane* pane)
+{
+	ThrowIfNil_(listener);
+	ThrowIfNil_(pane);
+
+	TArray<LAttachment*>* attachments = pane->GetAttachmentsList();
+	if(attachments != nil) {
+		TArrayIterator<LAttachment*> attachmentsIterator(*attachments);
+		LAttachment	*theAttachment = nil;
+		while (attachmentsIterator.Next(theAttachment)) {
+			CMessageBusAttachment* messageBus = dynamic_cast<CMessageBusAttachment*>(theAttachment);
+			if (messageBus != nil) {
+				messageBus->AddListener(listener);
+				break;
+			}
+		}
+	}
+}
 
 void
 PaneHelpers::AttachNodesRecursively(

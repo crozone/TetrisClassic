@@ -85,9 +85,17 @@ CTetrisGameRunnerAttachment::HandleGameControlMessage(MessageT inMessage, void *
 	// Game state control commands
 	switch(inMessage) {
 		// Game commands
-		case msg_TetrisNewGame:
-			// New game
-			NewGame();
+		case msg_TetrisSetupGame:
+			// Setup a new game with the given ruleset
+			CTetrisGameRuleset* rulesetPtr = static_cast<CTetrisGameRuleset*>(ioParam);
+			ThrowIfNil_(rulesetPtr);
+
+			CTetrisGameRuleset ruleset = *rulesetPtr;
+			SetupGame(ruleset);
+		break;
+		case msg_TetrisStartGame:
+			// Start game
+			StartGame();
 		break;
 		case msg_TetrisPauseGame:
 			// Pause game
@@ -162,9 +170,9 @@ CTetrisGameRunnerAttachment::HandleGameControlMessage(MessageT inMessage, void *
 		break;
 	}
 }
-	
+
 void
-CTetrisGameRunnerAttachment::NewGame() {
+CTetrisGameRunnerAttachment::SetupGame(CTetrisGameRuleset ruleset) {
 	if(!mInitialized) {
 		Throw_(-1);
 	}
@@ -173,7 +181,25 @@ CTetrisGameRunnerAttachment::NewGame() {
 		delete mTetrisGame;
 	}
 
-	mTetrisGame = new CTetrisGame();
+	mTetrisGame = new CTetrisGame(ruleset);
+	mTimeElapsedOnTick = 0;
+	mGameActive = FALSE;
+	
+	GameStateChanged();
+}
+	
+void
+CTetrisGameRunnerAttachment::StartGame() {
+	if(!mInitialized) {
+		Throw_(-1);
+	}
+
+	if(mTetrisGame == NULL) {
+		return;
+	}
+	
+	mTetrisGame->ResetState();
+
 	mTimeElapsedOnTick = 0;
 	mGameActive = TRUE;
 	StartRepeating();

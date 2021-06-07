@@ -4,7 +4,8 @@
 
 // Defines all Tetris game messages
 
-const MessageT	msg_TetrisNewGame				= 1001;
+const MessageT	msg_TetrisSetupGame				= 1000;
+const MessageT	msg_TetrisStartGame				= 1001;
 const MessageT	msg_TetrisPauseGame				= 1002;
 const MessageT	msg_TetrisResumeGame			= 1003;
 

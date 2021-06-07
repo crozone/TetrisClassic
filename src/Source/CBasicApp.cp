@@ -32,6 +32,7 @@
 #include "CTetrisPane.h"
 #include "TetrisMessage.h"
 #include "CTetrisGameRuleset.h"
+#include "PaneHelpers.h"
 
 // ---------------------------------------------------------------------------
 //	Constant declarations
@@ -87,7 +88,10 @@ int main()
 // ---------------------------------------------------------------------------
 //	Application object constructor
 
-CBasicApp::CBasicApp()
+CBasicApp::CBasicApp() :
+	mPrimaryWindow(NULL),
+	mSetupWindow(NULL),
+	mGameWindow(NULL)
 {
 	RegisterClasses();
 }
@@ -113,29 +117,24 @@ CBasicApp::~CBasicApp()
 void
 CBasicApp::StartUp()
 {
-	// Create primary window
-	LWindow* theWindow = LWindow::CreateWindow(PPob_GameSetupWindow, this);
-	ThrowIfNil_(theWindow);
+	// Create setup window
+	LWindow* theSetupWindow = LWindow::CreateWindow(PPob_GameSetupWindow, this);
+	ThrowIfNil_(theSetupWindow);
 	
-	// Link all controls in the window to the application listener
-	UReanimator::LinkListenerToBroadcasters(this, theWindow, PPob_GameSetupWindow);
-
-	this->mPrimaryWindow = theWindow;
-
-	theWindow->Show();
+	this->mSetupWindow = theSetupWindow;
 	
-	// OLD CODE:
+	PaneHelpers::AttachListenerToMessageBusOnPane(this, this->mSetupWindow);
+	
+	// Create game window
+	LWindow* theGameWindow = LWindow::CreateWindow(PPob_SampleWindow, this);
+	ThrowIfNil_(theGameWindow);
 
-	//// Create primary window
-	//LWindow* theWindow = LWindow::CreateWindow(PPob_SampleWindow, this);
-	//ThrowIfNil_(theWindow);
-	//
-	//// Link all controls in the window to the application listener
-	//UReanimator::LinkListenerToBroadcasters(this, theWindow, PPob_SampleWindow);
-	//
-	//this->mPrimaryWindow = theWindow;
-	//
-	//theWindow->Show();
+	this->mGameWindow = theGameWindow;
+	
+	PaneHelpers::AttachListenerToMessageBusOnPane(this, this->mGameWindow);
+	
+	// Switch to the setup window
+	this->SwitchPrimaryWindowTo(this->mSetupWindow);
 }
 
 // Handle application keypresses
@@ -318,22 +317,10 @@ CBasicApp::ListenToMessage(
 			// Populate with rules
 			gameRuleset.mStartingLevel = 7;
 			
-			// Hide the setup window
-			this->mPrimaryWindow->Hide();
+			this->SwitchPrimaryWindowTo(this->mGameWindow);
 			
-			// Create game window
-			LWindow* theGameWindow = LWindow::CreateWindow(PPob_SampleWindow, this);
-			ThrowIfNil_(theGameWindow);
-			
-			// Link all controls in the window to the application listener
-			UReanimator::LinkListenerToBroadcasters(this, theGameWindow, PPob_SampleWindow);
-			
-			this->mPrimaryWindow = theGameWindow;
-			
-			theGameWindow->Show();
-			
-			// Start the game, sending the game ruleset to the handlers
-			theGameWindow->ProcessCommand(msg_TetrisNewGame, &gameRuleset);
+			// Setup the game, sending the game ruleset to the command handler
+			this->mPrimaryWindow->ProcessCommand(msg_TetrisSetupGame, &gameRuleset);
 		break;
 	}
 	
@@ -350,6 +337,28 @@ CBasicApp::ListenToMessage(
 	}
 }
 
+void
+CBasicApp::SwitchPrimaryWindowTo(LWindow* window) {
+	if(this->mPrimaryWindow != NULL) {		
+		// Hide current primary window
+		this->mPrimaryWindow->Hide();
+		
+		// Clear current primary window
+		this->mPrimaryWindow = NULL;
+	}
+	
+	if(window != NULL) {
+		// Set current primary window
+		this->mPrimaryWindow = window;
+		
+		// Show primary window
+		this->mPrimaryWindow->Show();
+		
+		// Activate primary window
+		this->mPrimaryWindow->Activate();
+	}
+}
+
 
 // ---------------------------------------------------------------------------
 //	¥ RegisterClasses								[protected]
@@ -363,7 +372,6 @@ CBasicApp::RegisterClasses()
 	RegisterClass_(LWindow);
 	RegisterClass_(LView);
 	RegisterClass_(LCaption);
-	//RegisterClass_(LStdButton);
 	RegisterClass_(LOffscreenView);
 	RegisterClass_(LActiveScroller);
 	
@@ -380,8 +388,6 @@ CBasicApp::RegisterClasses()
 	//
 	UControlRegistry::RegisterClasses();
 	
-	//RegisterClass_(LControlPane);
-	//RegisterClass_(LStaticText);
 	RegisterClass_(CQuitOnCloseAttachment);
 	RegisterClass_(CTetrisGameRunnerAttachment);
 	RegisterClass_(CTetrisKeyHandlerAttachment);

@@ -8,10 +8,7 @@ CTetrisGame::CTetrisGame() :
 	mState(),
 	mRuleset()
 {
-	// Setup state
-	mState.mLevel = mRuleset.mStartingLevel;
-	mState.mGameOver = FALSE;
-	StartNextTurn();
+	ResetState();
 };
 
 CTetrisGame::CTetrisGame(CTetrisGameRuleset ruleset) :
@@ -19,10 +16,8 @@ CTetrisGame::CTetrisGame(CTetrisGameRuleset ruleset) :
 {
 	// Setup state
 	mRuleset = ruleset;
-	mState.mStartingLevel = mRuleset.mStartingLevel;
-	mState.mLevel = mRuleset.mStartingLevel;
-	mState.mGameOver = FALSE;
-	StartNextTurn();
+	
+	ResetState();
 }
 
 CTetrisGame::~CTetrisGame() {
@@ -731,6 +726,19 @@ CTetrisGame::RenderBagPiece(UInt8 index, BlockKind::Type* blockBuffer, UInt8 buf
 	}
 	
 	RenderSingleDisplayPiece(piece, blockBuffer, bufferWidth, bufferHeight);
+}
+
+void
+CTetrisGame::ResetState() {
+	mState.~CTetrisGameState();
+	
+	// TODO: Pass ruleset into game state constructor?
+	mState = CTetrisGameState();
+	
+	mState.mStartingLevel = mRuleset.mStartingLevel;
+	mState.mLevel = mRuleset.mStartingLevel;
+	mState.mGameOver = FALSE;
+	StartNextTurn();
 }
 
 CTetrisGameState*	

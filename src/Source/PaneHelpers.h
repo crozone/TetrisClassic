@@ -3,6 +3,11 @@
 #pragma once
 
 namespace PaneHelpers {
+
+	void AttachListenerToMessageBusOnPane(
+	LListener* listener,
+	LPane* pane);
+
 	void AttachNodesRecursively(
 	LPane* pane,
 	LBroadcaster* upstreamBroadcaster,

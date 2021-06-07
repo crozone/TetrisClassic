@@ -180,28 +180,31 @@ CTetrisGame::DoPieceHold() {
 	if(!IsAcceptingInput()) {
 		return FALSE;
 	}
-
-	if(!mState.mHoldPieceTriggeredThisTurn) {
-		mState.mHoldPieceTriggeredThisTurn = TRUE;
-		
-		PieceKind::Type currentHoldPiece = mState.mCurrentHoldPiece;
-		mState.mCurrentHoldPiece = mState.mCurrentPiece;
-		
-		if(currentHoldPiece == PieceKind::None) {
-			// Hold was empty, so new piece is from the top of the piece queue
-			PieceKind::Type nextPiece = GetNextPiece();
-			StartNewTurn(nextPiece, FALSE);
-		}
-		else {
-			// Hold was not empty, so new piece is the existing hold piece
-			StartNewTurn(currentHoldPiece, FALSE);
-		}
-		
-		return TRUE;
-	}
-	else {
+	
+	if(!mRuleset.mEnableHoldPiece) {
 		return FALSE;
 	}
+
+	if(mState.mHoldPieceTriggeredThisTurn) {
+		return FALSE;
+	}
+	
+	mState.mHoldPieceTriggeredThisTurn = TRUE;
+	
+	PieceKind::Type currentHoldPiece = mState.mCurrentHoldPiece;
+	mState.mCurrentHoldPiece = mState.mCurrentPiece;
+	
+	if(currentHoldPiece == PieceKind::None) {
+		// Hold was empty, so new piece is from the top of the piece queue
+		PieceKind::Type nextPiece = GetNextPiece();
+		StartNewTurn(nextPiece, FALSE);
+	}
+	else {
+		// Hold was not empty, so new piece is the existing hold piece
+		StartNewTurn(currentHoldPiece, FALSE);
+	}
+	
+	return TRUE;
 }
 
 Boolean
@@ -510,7 +513,7 @@ CTetrisGame::GetCurrentTickDelay() {
 		45 * 1000 / 60,
 		41 * 1000 / 60,
 		37 * 1000 / 60,
-		33 * 1000 / 60 ,
+		33 * 1000 / 60,
 		28 * 1000 / 60,
 		22 * 1000 / 60,
 		17 * 1000 / 60,
@@ -556,8 +559,8 @@ CTetrisGame::ScoreRowsCleared(SInt32 linesCleared) {
 	
 	// GB formula:
 	// Lines = startLevel * 10 + 10, then every 10 lines
-	SInt32 linesThisLevel = (mState.mStartingLevel == mState.mLevel)
-		? (mState.mStartingLevel * 10 + 10) : 10;
+	SInt32 linesThisLevel = (mRuleset.mStartingLevel == mState.mLevel)
+		? (mRuleset.mStartingLevel * 10 + 10) : 10;
 	
 	if(mState.mLinesClearedThisLevel >= linesThisLevel) {
 		mState.mLinesClearedThisLevel -= linesThisLevel;
@@ -735,7 +738,6 @@ CTetrisGame::ResetState() {
 	// TODO: Pass ruleset into game state constructor?
 	mState = CTetrisGameState();
 	
-	mState.mStartingLevel = mRuleset.mStartingLevel;
 	mState.mLevel = mRuleset.mStartingLevel;
 	mState.mGameOver = FALSE;
 	StartNextTurn();

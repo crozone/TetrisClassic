@@ -21,9 +21,6 @@ public:
 							// Tracks the current game score
 				SInt32		mScore;
 				
-							// Remembers the starting level for scoring purposes
-				SInt32		mStartingLevel;
-				
 							// Tracks the current game level
 				SInt32		mLevel;
 				

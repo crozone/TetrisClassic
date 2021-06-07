@@ -18,6 +18,8 @@
 #include <LStdControl.h>
 #include <LActiveScroller.h>
 #include <UControlRegistry.h>
+#include <LSlider.h>
+#include <LCheckbox.h>
 #include <UAttachments.h>
 
 // The following header files are included so the classes within them can be added with
@@ -303,20 +305,45 @@ CBasicApp::ListenToMessage(
 		//	theMainWindow->ProcessCommand(inMessage, nil);
 		//break;
 		case msg_SetupWindowNewGameClick:
-			// TODO:
+			// TODO strategy:
 			//  * Get the current settings from the setup window
 			//  * Create and populate game settings struct
 			//  * Hide setup window
 			//  * Create and show game window
 			//     + Game window interally sets up child windows?
 			//  * Send msg_TetrisNewGame command to game window with settings struct
-			
+				
 			// Create the ruleset
 			CTetrisGameRuleset gameRuleset = CTetrisGameRuleset();
 			
+			//
 			// Populate with rules
-			gameRuleset.mStartingLevel = 7;
+			//
+					
+			LSlider* startingLevelSlider = dynamic_cast<LSlider*>(
+				this->mSetupWindow->FindPaneByID(14) // TODO: Move to constant
+			);
+			ThrowIfNil_(startingLevelSlider);
+			gameRuleset.mStartingLevel = startingLevelSlider->GetValue();
 			
+			LCheckBox* holdPieceCheckbox = dynamic_cast<LCheckBox*>(
+				this->mSetupWindow->FindPaneByID(23) // TODO: Move to constant
+			);
+			ThrowIfNil_(holdPieceCheckbox);
+			gameRuleset.mEnableHoldPiece = holdPieceCheckbox->GetValue() ? TRUE : FALSE;
+			
+			LSlider* nextPiecesSlider = dynamic_cast<LSlider*>(
+				this->mSetupWindow->FindPaneByID(24) // TODO: Move to constant
+			);
+			ThrowIfNil_(nextPiecesSlider);
+			// TODO: Make game logic actually respect mPieceBagLookahead 
+			gameRuleset.mPieceBagLookahead = nextPiecesSlider->GetValue();
+			
+			// TODO: Rotation System
+			// TODO: Scoring System
+			
+			
+			// Set the active window to the game window
 			this->SwitchPrimaryWindowTo(this->mGameWindow);
 			
 			// Setup the game, sending the game ruleset to the command handler

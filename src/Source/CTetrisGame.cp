@@ -5,27 +5,37 @@
 #include "CTetrisGame.h"
 
 CTetrisGame::CTetrisGame() :
-	mState(),
-	mRuleset()
+	mState(NULL),
+	mRuleset(NULL)
 {
+	mRuleset = new CTetrisGameRuleset();
+
 	ResetState();
 };
 
 CTetrisGame::CTetrisGame(CTetrisGameRuleset ruleset) :
-	mState()
+	mState(NULL),
+	mRuleset(NULL)
 {
-	// Setup state
-	mRuleset = ruleset;
+	mRuleset = new CTetrisGameRuleset();	
+	*mRuleset = ruleset;
 	
 	ResetState();
 }
 
 CTetrisGame::~CTetrisGame() {
+	if(mState != NULL) {
+		delete mState;
+	}
+	
+	if(mRuleset != NULL) {
+		delete mRuleset;
+	}
 }
 
 Boolean
 CTetrisGame::IsAcceptingInput() {
-	return (!mState.mGameOver && !mState.mQueueNewTurn);
+	return (!mState->mGameOver && !mState->mQueueNewTurn);
 }
 
 Boolean
@@ -36,15 +46,15 @@ CTetrisGame::DoPieceLeft() {
 
 	// Move the piece left if it won't collide with anything
 	if(!TetrisPieces::CheckCollisionWithBoard(
-		mState.mCurrentPiece,
-		mState.mCurrentPieceOrientation,
-		mState.mCurrentPieceXPosition - 1,
-		mState.mCurrentPieceYPosition,
-		mState.mBoardState,
-		mState.mBoardStateWidth,
-		mState.mBoardStateHeight)) {
+		mState->mCurrentPiece,
+		mState->mCurrentPieceOrientation,
+		mState->mCurrentPieceXPosition - 1,
+		mState->mCurrentPieceYPosition,
+		mState->mBoardState,
+		mState->mBoardStateWidth,
+		mState->mBoardStateHeight)) {
 		
-		mState.mCurrentPieceXPosition--;
+		mState->mCurrentPieceXPosition--;
 		
 		return TRUE;
 	}
@@ -61,15 +71,15 @@ CTetrisGame::DoPieceRight() {
 
 	// Move the piece right if it won't collide with anything
 	if(!TetrisPieces::CheckCollisionWithBoard(
-		mState.mCurrentPiece,
-		mState.mCurrentPieceOrientation,
-		mState.mCurrentPieceXPosition + 1,
-		mState.mCurrentPieceYPosition,
-		mState.mBoardState,
-		mState.mBoardStateWidth,
-		mState.mBoardStateHeight)) {
+		mState->mCurrentPiece,
+		mState->mCurrentPieceOrientation,
+		mState->mCurrentPieceXPosition + 1,
+		mState->mCurrentPieceYPosition,
+		mState->mBoardState,
+		mState->mBoardStateWidth,
+		mState->mBoardStateHeight)) {
 		
-		mState.mCurrentPieceXPosition++;
+		mState->mCurrentPieceXPosition++;
 		
 		return TRUE;
 	}
@@ -86,18 +96,18 @@ CTetrisGame::DoPieceRotateCW() {
 	
 	// Rotate the piece clockwise if it won't collide with anything
 	
-	PieceOrientation::Type orientation = PieceOrientation::RotateCW(mState.mCurrentPieceOrientation);
+	PieceOrientation::Type orientation = PieceOrientation::RotateCW(mState->mCurrentPieceOrientation);
 	
 	if(!TetrisPieces::CheckCollisionWithBoard(
-		mState.mCurrentPiece,
+		mState->mCurrentPiece,
 		orientation,
-		mState.mCurrentPieceXPosition,
-		mState.mCurrentPieceYPosition,
-		mState.mBoardState,
-		mState.mBoardStateWidth,
-		mState.mBoardStateHeight)) {
+		mState->mCurrentPieceXPosition,
+		mState->mCurrentPieceYPosition,
+		mState->mBoardState,
+		mState->mBoardStateWidth,
+		mState->mBoardStateHeight)) {
 		
-		mState.mCurrentPieceOrientation = orientation;
+		mState->mCurrentPieceOrientation = orientation;
 		
 		return TRUE;
 	}
@@ -114,18 +124,18 @@ CTetrisGame::DoPieceRotateCCW() {
 
 	// Rotate the piece counter-clockwise if it won't collide with anything
 	
-	PieceOrientation::Type orientation = PieceOrientation::RotateCCW(mState.mCurrentPieceOrientation);
+	PieceOrientation::Type orientation = PieceOrientation::RotateCCW(mState->mCurrentPieceOrientation);
 	
 	if(!TetrisPieces::CheckCollisionWithBoard(
-		mState.mCurrentPiece,
+		mState->mCurrentPiece,
 		orientation,
-		mState.mCurrentPieceXPosition,
-		mState.mCurrentPieceYPosition,
-		mState.mBoardState,
-		mState.mBoardStateWidth,
-		mState.mBoardStateHeight)) {
+		mState->mCurrentPieceXPosition,
+		mState->mCurrentPieceYPosition,
+		mState->mBoardState,
+		mState->mBoardStateWidth,
+		mState->mBoardStateHeight)) {
 		
-		mState.mCurrentPieceOrientation = orientation;
+		mState->mCurrentPieceOrientation = orientation;
 		
 		return TRUE;
 	}
@@ -146,8 +156,8 @@ CTetrisGame::DoPieceSoftDrop() {
 		// Soft-drop counter for scoring purposes.
 		// Many game rulesets reward points per soft-drop line.
 		
-		mState.mContinuousSoftDropLines++;
-		mState.mSoftDropLinesThisTurn++;
+		mState->mContinuousSoftDropLines++;
+		mState->mSoftDropLinesThisTurn++;
 	}
 	
 	return TRUE;
@@ -162,11 +172,11 @@ CTetrisGame::DoPieceHardDrop() {
 
 	// Move the piece down until it collides with something.
 	
-	while(!DoDrop() && mState.mCurrentPieceYPosition >= 0) {	
+	while(!DoDrop() && mState->mCurrentPieceYPosition >= 0) {	
 		// Hard-drop counter for scoring purposes.
 		// Many game rulesets reward points per hard-drop line
 			
-		mState.mHardDropLinesThisTurn++;
+		mState->mHardDropLinesThisTurn++;
 	}
 	
 	return TRUE;
@@ -181,18 +191,18 @@ CTetrisGame::DoPieceHold() {
 		return FALSE;
 	}
 	
-	if(!mRuleset.mEnableHoldPiece) {
+	if(!mRuleset->mEnableHoldPiece) {
 		return FALSE;
 	}
 
-	if(mState.mHoldPieceTriggeredThisTurn) {
+	if(mState->mHoldPieceTriggeredThisTurn) {
 		return FALSE;
 	}
 	
-	mState.mHoldPieceTriggeredThisTurn = TRUE;
+	mState->mHoldPieceTriggeredThisTurn = TRUE;
 	
-	PieceKind::Type currentHoldPiece = mState.mCurrentHoldPiece;
-	mState.mCurrentHoldPiece = mState.mCurrentPiece;
+	PieceKind::Type currentHoldPiece = mState->mCurrentHoldPiece;
+	mState->mCurrentHoldPiece = mState->mCurrentPiece;
 	
 	if(currentHoldPiece == PieceKind::None) {
 		// Hold was empty, so new piece is from the top of the piece queue
@@ -209,7 +219,7 @@ CTetrisGame::DoPieceHold() {
 
 Boolean
 CTetrisGame::IsGameOver() {
-	return mState.mGameOver;
+	return mState->mGameOver;
 }
 
 
@@ -220,13 +230,13 @@ CTetrisGame::GetNextPiece() {
 	// Generate more of the piece bag, if necessary
 	UpdatePieceBag();
 	
-	if(mState.mCurrentPieceBagCount == 0) {
+	if(mState->mCurrentPieceBagCount == 0) {
 		// Sanity check that we now have pieces.
 		Throw_(-1);
 	}
 	
 	// Get the top piece from the piece bag
-	PieceKind::Type nextPiece = mState.mPieceBag[0];
+	PieceKind::Type nextPiece = mState->mPieceBag[0];
 	
 	if(nextPiece == PieceKind::None) {
 		// Sanity check
@@ -234,16 +244,16 @@ CTetrisGame::GetNextPiece() {
 	}
 	
 	// Move all pieces down by 1
-	for(UInt8 i = 0; i < mState.mCurrentPieceBagCount - 1; i++) {
-		mState.mPieceBag[i] = mState.mPieceBag[i + 1];
+	for(UInt8 i = 0; i < mState->mCurrentPieceBagCount - 1; i++) {
+		mState->mPieceBag[i] = mState->mPieceBag[i + 1];
 	}
 	
 	// It is technically not necessary to clear the last index, 
 	// since no piece beyond the bag count should ever be accessed,
 	// but this adds a sanity check during debugging.
-	mState.mPieceBag[mState.mCurrentPieceBagCount - 1] = PieceKind::None;
+	mState->mPieceBag[mState->mCurrentPieceBagCount - 1] = PieceKind::None;
 	
-	mState.mCurrentPieceBagCount--;
+	mState->mCurrentPieceBagCount--;
 	
 	return nextPiece;
 }
@@ -253,15 +263,15 @@ CTetrisGame::UpdatePieceBag() {
 	// While the piece bag has space for another piece set,
 	// generate random piece sets into the piece bag.
 	
-	while((CTetrisGameState::PieceBagBufferCount - mState.mCurrentPieceBagCount)
-		>= PieceGenerationStrategy::GetPieceSetSize(mState.mPieceGenerationStrategy)) {
+	while((CTetrisGameState::PieceBagBufferCount - mState->mCurrentPieceBagCount)
+		>= PieceGenerationStrategy::GetPieceSetSize(mState->mPieceGenerationStrategy)) {
 		
 		UInt8 piecesAdded = PieceGenerationStrategy::GeneratePieceSet(
-			mState.mPieceGenerationStrategy,
-			&mState.mPieceBag[mState.mCurrentPieceBagCount]
+			mState->mPieceGenerationStrategy,
+			&mState->mPieceBag[mState->mCurrentPieceBagCount]
 			);
 			
-		mState.mCurrentPieceBagCount += piecesAdded;
+		mState->mCurrentPieceBagCount += piecesAdded;
 	}
 }
 
@@ -269,16 +279,16 @@ CTetrisGame::UpdatePieceBag() {
 void
 CTetrisGame::StartNewTurn(PieceKind::Type pieceKind, Boolean resetHold) {
 	// Set piece to initial position
-	mState.mCurrentPiece = pieceKind;
-	mState.mCurrentPieceOrientation = PieceOrientation::Down;
-	mState.mCurrentPieceXPosition = 3;
-	mState.mCurrentPieceYPosition = 20;
-	mState.mContinuousSoftDropLines = 0;
-	mState.mSoftDropLinesThisTurn = 0;
-	mState.mHardDropLinesThisTurn = 0;
+	mState->mCurrentPiece = pieceKind;
+	mState->mCurrentPieceOrientation = PieceOrientation::Down;
+	mState->mCurrentPieceXPosition = 3;
+	mState->mCurrentPieceYPosition = 20;
+	mState->mContinuousSoftDropLines = 0;
+	mState->mSoftDropLinesThisTurn = 0;
+	mState->mHardDropLinesThisTurn = 0;
 	
 	if(resetHold) {
-		mState.mHoldPieceTriggeredThisTurn = FALSE;
+		mState->mHoldPieceTriggeredThisTurn = FALSE;
 	}
 }
 
@@ -304,11 +314,11 @@ CTetrisGame::DoDrop() {
 	if(collision) {
 		// Score continuous soft drop
 		// BPS: Number of continuous lines cleared + 1
-		mState.mScore += mState.mContinuousSoftDropLines > 0 ? mState.mContinuousSoftDropLines + 1 : 0;
+		mState->mScore += mState->mContinuousSoftDropLines > 0 ? mState->mContinuousSoftDropLines + 1 : 0;
 
 		// Score hard drop
 		// TODO: Currently hard drop is scored the same as soft drop. Is this always true?
-		mState.mScore += mState.mHardDropLinesThisTurn > 0 ? mState.mHardDropLinesThisTurn + 1 : 0;
+		mState->mScore += mState->mHardDropLinesThisTurn > 0 ? mState->mHardDropLinesThisTurn + 1 : 0;
 	
 		UInt8 rowsCleared = DoRowClears();
 		
@@ -323,7 +333,7 @@ CTetrisGame::DoDrop() {
 			StartNewTurn(PieceKind::None, FALSE);
 		
 			// Queue a turn clear for after the line clearing animations are complete
-			mState.mQueueNewTurn = TRUE;
+			mState->mQueueNewTurn = TRUE;
 		}
 	}
 	
@@ -336,62 +346,62 @@ CTetrisGame::DropAndStampPiece() {
 	// This indicates GAME OVER.
 	
 	if(TetrisPieces::CheckCollisionWithBoard(
-		mState.mCurrentPiece,
-		mState.mCurrentPieceOrientation,
-		mState.mCurrentPieceXPosition,
-		mState.mCurrentPieceYPosition,
-		mState.mBoardState,
-		mState.mBoardStateWidth,
-		mState.mBoardStateHeight)) {
+		mState->mCurrentPiece,
+		mState->mCurrentPieceOrientation,
+		mState->mCurrentPieceXPosition,
+		mState->mCurrentPieceYPosition,
+		mState->mBoardState,
+		mState->mBoardStateWidth,
+		mState->mBoardStateHeight)) {
 		
 		// Piece has collided
 		
 		// Stamp the piece onto the board
 		TetrisPieces::StampPieceOntoBoard(
-			mState.mCurrentPiece,
-			mState.mCurrentPieceOrientation,
-			mState.mCurrentPieceXPosition,
-			mState.mCurrentPieceYPosition,
+			mState->mCurrentPiece,
+			mState->mCurrentPieceOrientation,
+			mState->mCurrentPieceXPosition,
+			mState->mCurrentPieceYPosition,
 			TRUE,
 			FALSE,
-			mState.mBoardState,
-			mState.mBoardStateWidth,
-			mState.mBoardStateHeight);
+			mState->mBoardState,
+			mState->mBoardStateWidth,
+			mState->mBoardStateHeight);
 		
 		// Set game over
-		mState.mGameOver = TRUE;	
+		mState->mGameOver = TRUE;	
 		
 		return TRUE;
 	}
 	// Check if piece has collision immediately underneath it
 	else if(TetrisPieces::CheckCollisionWithBoard(
-		mState.mCurrentPiece,
-		mState.mCurrentPieceOrientation,
-		mState.mCurrentPieceXPosition,
-		mState.mCurrentPieceYPosition - 1,
-		mState.mBoardState,
-		mState.mBoardStateWidth,
-		mState.mBoardStateHeight)) {
+		mState->mCurrentPiece,
+		mState->mCurrentPieceOrientation,
+		mState->mCurrentPieceXPosition,
+		mState->mCurrentPieceYPosition - 1,
+		mState->mBoardState,
+		mState->mBoardStateWidth,
+		mState->mBoardStateHeight)) {
 		
 		// Piece has collided
 		
 		// Stamp the piece onto the board
 		TetrisPieces::StampPieceOntoBoard(
-			mState.mCurrentPiece,
-			mState.mCurrentPieceOrientation,
-			mState.mCurrentPieceXPosition,
-			mState.mCurrentPieceYPosition,
+			mState->mCurrentPiece,
+			mState->mCurrentPieceOrientation,
+			mState->mCurrentPieceXPosition,
+			mState->mCurrentPieceYPosition,
 			TRUE,
 			FALSE,
-			mState.mBoardState,
-			mState.mBoardStateWidth,
-			mState.mBoardStateHeight);
+			mState->mBoardState,
+			mState->mBoardStateWidth,
+			mState->mBoardStateHeight);
 		
 		return TRUE;
 	}
 	else {
 		// Move piece down by one row
-		mState.mCurrentPieceYPosition--;
+		mState->mCurrentPieceYPosition--;
 	
 		return FALSE;
 	}
@@ -401,11 +411,11 @@ UInt8
 CTetrisGame::DoRowClears() {
 	UInt8 rowsCleared = 0;
 
-	for(int j = 0; j < mState.mBoardStateHeight; j++) {
+	for(int j = 0; j < mState->mBoardStateHeight; j++) {
 		Boolean rowIsComplete = TRUE;
-		for(int i = 0; i < mState.mBoardStateWidth; i++) {
+		for(int i = 0; i < mState->mBoardStateWidth; i++) {
 			// If the entire row is collidable, it is considered cleared
-			if(!TetrisPieces::IsBlockCollidable(mState.mBoardState[j * mState.mBoardStateWidth + i])) {
+			if(!TetrisPieces::IsBlockCollidable(mState->mBoardState[j * mState->mBoardStateWidth + i])) {
 				rowIsComplete = FALSE;
 				break;
 			}
@@ -413,16 +423,16 @@ CTetrisGame::DoRowClears() {
 		
 		if(rowIsComplete) {
 			// Clear the row
-			for(int i = 0; i < mState.mBoardStateWidth; i++) {
+			for(int i = 0; i < mState->mBoardStateWidth; i++) {
 				// Clear the collidable flag
-				TetrisPieces::SetBlockCollidable(mState.mBoardState[j * mState.mBoardStateWidth + i], FALSE);
+				TetrisPieces::SetBlockCollidable(mState->mBoardState[j * mState->mBoardStateWidth + i], FALSE);
 				
 				// Set the clear flag and ticks
-				TetrisPieces::SetFlaggedForClear(mState.mBoardState[j * mState.mBoardStateWidth + i], TRUE);
+				TetrisPieces::SetFlaggedForClear(mState->mBoardState[j * mState->mBoardStateWidth + i], TRUE);
 				
 				// TODO: Play with this value depending on row/column
 				// to achieve fancy clear animations
-				TetrisPieces::SetClearCountdown(mState.mBoardState[j * mState.mBoardStateWidth + i], 7);
+				TetrisPieces::SetClearCountdown(mState->mBoardState[j * mState->mBoardStateWidth + i], 7);
 			}
 			
 			rowsCleared++;
@@ -436,22 +446,22 @@ Boolean
 CTetrisGame::ProcessFlaggedToClearBlocks() {
 	Boolean blocksProcessed = FALSE;
 	
-	for(int j = mState.mBoardStateHeight - 1; j >= 0; j--) {
-		for(int i = 0; i < mState.mBoardStateWidth; i++) {
+	for(int j = mState->mBoardStateHeight - 1; j >= 0; j--) {
+		for(int i = 0; i < mState->mBoardStateWidth; i++) {
 			// Process any blocks that are flagged for clear
-			if(TetrisPieces::IsFlaggedForClear(mState.mBoardState[j * mState.mBoardStateWidth + i])) {
+			if(TetrisPieces::IsFlaggedForClear(mState->mBoardState[j * mState->mBoardStateWidth + i])) {
 				blocksProcessed = TRUE;
-				UInt8 clearTicksLeft = TetrisPieces::GetClearCountdown(mState.mBoardState[j * mState.mBoardStateWidth + i]);
+				UInt8 clearTicksLeft = TetrisPieces::GetClearCountdown(mState->mBoardState[j * mState->mBoardStateWidth + i]);
 				
 				if(clearTicksLeft > 0) {
-					TetrisPieces::SetClearCountdown(mState.mBoardState[j * mState.mBoardStateWidth + i], clearTicksLeft - 1);
+					TetrisPieces::SetClearCountdown(mState->mBoardState[j * mState->mBoardStateWidth + i], clearTicksLeft - 1);
 				}
 				else {
 					// Clear the block. Move every block above this block down one.
-					for(int k = j; k < (mState.mBoardStateHeight - 1); k++) {
-						mState.mBoardState[k * mState.mBoardStateWidth + i] = mState.mBoardState[(k + 1) * mState.mBoardStateWidth + i];
+					for(int k = j; k < (mState->mBoardStateHeight - 1); k++) {
+						mState->mBoardState[k * mState->mBoardStateWidth + i] = mState->mBoardState[(k + 1) * mState->mBoardStateWidth + i];
 					}
-					mState.mBoardState[(mState.mBoardStateHeight - 1) * mState.mBoardStateWidth + i] = BlockKind::None;
+					mState->mBoardState[(mState->mBoardStateHeight - 1) * mState->mBoardStateWidth + i] = BlockKind::None;
 				}
 			}
 		}
@@ -466,21 +476,21 @@ CTetrisGame::ProcessFlaggedToClearBlocks() {
 // Returns TRUE if the game is still running, FALSE if GAME OVER.				
 Boolean
 CTetrisGame::DoGameTick() {
-	if(mState.mGameOver) {
+	if(mState->mGameOver) {
 		return FALSE;
 	}
 	
 	Boolean skipDrop = ProcessFlaggedToClearBlocks();
 	
 	if(!skipDrop) {
-		if(mState.mQueueNewTurn) {
-			mState.mQueueNewTurn = FALSE;
+		if(mState->mQueueNewTurn) {
+			mState->mQueueNewTurn = FALSE;
 			StartNextTurn();
 		}
 		else {
 			// The user has not performed a manual drop within a tick time,
 			// reset the continuous soft drop counter
-			mState.mContinuousSoftDropLines = 0;
+			mState->mContinuousSoftDropLines = 0;
 			
 			// Do a gravity drop.
 			DoDrop();
@@ -494,12 +504,12 @@ SInt32
 CTetrisGame::GetCurrentTickDelay() {
 	// TODO: Move this into an array and actually finish it
 	
-	if(mState.mGameOver) {
+	if(mState->mGameOver) {
 		return -1;
 	}
 	
 	// If a new turn is queued, it means we are in a line-clear animation
-	if(mState.mQueueNewTurn) {
+	if(mState->mQueueNewTurn) {
 		return 10;
 	}
 	
@@ -531,12 +541,12 @@ CTetrisGame::GetCurrentTickDelay() {
 		3 * 1000 / 60
 	};
 	
-	if(mState.mLevel < 0) {
+	if(mState->mLevel < 0) {
 		// Infinite timeout
 		return -1;
 	}
 	
-	UInt32 msDelay = (mState.mLevel > 20) ? gbLevelTickDelays[20] : gbLevelTickDelays[mState.mLevel];
+	UInt32 msDelay = (mState->mLevel > 20) ? gbLevelTickDelays[20] : gbLevelTickDelays[mState->mLevel];
 	
 	// Return value is in hundredths of a second, so divide ms value by 10
 	return msDelay / 10;
@@ -545,10 +555,10 @@ CTetrisGame::GetCurrentTickDelay() {
 void
 CTetrisGame::ScoreRowsCleared(SInt32 linesCleared) {
 	// Update total lines cleared
-	mState.mLinesCleared += linesCleared;
+	mState->mLinesCleared += linesCleared;
 	
 	// Update lines left on the current level
-	mState.mLinesClearedThisLevel += linesCleared;
+	mState->mLinesClearedThisLevel += linesCleared;
 	
 	// TODO: Allow points and level progression to be altered by ruleset
 	
@@ -559,12 +569,12 @@ CTetrisGame::ScoreRowsCleared(SInt32 linesCleared) {
 	
 	// GB formula:
 	// Lines = startLevel * 10 + 10, then every 10 lines
-	SInt32 linesThisLevel = (mRuleset.mStartingLevel == mState.mLevel)
-		? (mRuleset.mStartingLevel * 10 + 10) : 10;
+	SInt32 linesThisLevel = (mRuleset->mStartingLevel == mState->mLevel)
+		? (mRuleset->mStartingLevel * 10 + 10) : 10;
 	
-	if(mState.mLinesClearedThisLevel >= linesThisLevel) {
-		mState.mLinesClearedThisLevel -= linesThisLevel;
-		mState.mLevel++;
+	if(mState->mLinesClearedThisLevel >= linesThisLevel) {
+		mState->mLinesClearedThisLevel -= linesThisLevel;
+		mState->mLevel++;
 	}
 	
 	// Reward points based on the number of lines cleared
@@ -589,9 +599,9 @@ CTetrisGame::ScoreRowsCleared(SInt32 linesCleared) {
 	}
 	
 	// Points rewarded increases with level
-	linePoints *= (mState.mLevel + 1);
+	linePoints *= (mState->mLevel + 1);
 	
-	mState.mScore += linePoints;
+	mState->mScore += linePoints;
 	
 	// Note: Potentially move level advance down here.
 }
@@ -607,7 +617,7 @@ CTetrisGame::ScoreSoftDrop(SInt32 linesDropped) {
 	// Original Nintendo Scoring System
 	// One point for each line continuously soft-dropped.
 	
-	mState.mScore += linesDropped;
+	mState->mScore += linesDropped;
 }
 				
 void
@@ -617,25 +627,25 @@ CTetrisGame::ScoreNaturalDrop() {
 
 UInt8
 CTetrisGame::GetBoardWidth() {
-	return mState.mBoardStateWidth;
+	return mState->mBoardStateWidth;
 }
 
 UInt8
 CTetrisGame::GetBoardHeight() {
-	return mState.mBoardStateHeight;
+	return mState->mBoardStateHeight;
 }
 
 void
 CTetrisGame::RenderBoard(BlockKind::Type* blockBuffer, UInt8 bufferWidth, UInt8 bufferHeight) {
 	// Sanity check that the incoming buffer is large enough to render the board
-	if(bufferWidth < mState.mBoardStateWidth || bufferHeight < mState.mBoardStateHeight) {
+	if(bufferWidth < mState->mBoardStateWidth || bufferHeight < mState->mBoardStateHeight) {
 		Throw_(-1);
 	}
 	
 	// Copy current board state to buffer
-	for(int j = 0; j < mState.mBoardStateHeight; j++) {
-		for(int i = 0; i < mState.mBoardStateWidth; i++) {
-			blockBuffer[j * bufferWidth + i] = mState.mBoardState[j * mState.mBoardStateWidth + i];
+	for(int j = 0; j < mState->mBoardStateHeight; j++) {
+		for(int i = 0; i < mState->mBoardStateWidth; i++) {
+			blockBuffer[j * bufferWidth + i] = mState->mBoardState[j * mState->mBoardStateWidth + i];
 		}
 	}
 		
@@ -643,22 +653,22 @@ CTetrisGame::RenderBoard(BlockKind::Type* blockBuffer, UInt8 bufferWidth, UInt8 
 	
 	// To do this, we move the piece downwards until it collides with something.
 	// Then we draw the ghost piece in the last known non-colliding position.
-	for(int i = mState.mCurrentPieceYPosition; i >= 0; i--) {
+	for(int i = mState->mCurrentPieceYPosition; i >= 0; i--) {
 		// Check for a collision below the current row
 		if(TetrisPieces::CheckCollisionWithBoard(
-			mState.mCurrentPiece,
-			mState.mCurrentPieceOrientation,
-			mState.mCurrentPieceXPosition,
+			mState->mCurrentPiece,
+			mState->mCurrentPieceOrientation,
+			mState->mCurrentPieceXPosition,
 			i - 1,
-			mState.mBoardState,
-			mState.mBoardStateWidth,
-			mState.mBoardStateHeight)) {
+			mState->mBoardState,
+			mState->mBoardStateWidth,
+			mState->mBoardStateHeight)) {
 			
 			// Stamp ghost version of piece onto the current row
 			TetrisPieces::StampPieceOntoBoard(
-				mState.mCurrentPiece,
-				mState.mCurrentPieceOrientation,
-				mState.mCurrentPieceXPosition,
+				mState->mCurrentPiece,
+				mState->mCurrentPieceOrientation,
+				mState->mCurrentPieceXPosition,
 				i,
 				FALSE,
 				TRUE,
@@ -673,10 +683,10 @@ CTetrisGame::RenderBoard(BlockKind::Type* blockBuffer, UInt8 bufferWidth, UInt8 
 	
 	// Stamp the falling Tetris piece over the top of the current game board
 	TetrisPieces::StampPieceOntoBoard(
-		mState.mCurrentPiece,
-		mState.mCurrentPieceOrientation,
-		mState.mCurrentPieceXPosition,
-		mState.mCurrentPieceYPosition,
+		mState->mCurrentPiece,
+		mState->mCurrentPieceOrientation,
+		mState->mCurrentPieceXPosition,
+		mState->mCurrentPieceYPosition,
 		TRUE,
 		FALSE,
 		blockBuffer,
@@ -717,15 +727,15 @@ CTetrisGame::RenderSingleDisplayPiece(
 
 void
 CTetrisGame::RenderHoldPiece(BlockKind::Type* blockBuffer, UInt8 bufferWidth, UInt8 bufferHeight) {
-	RenderSingleDisplayPiece(mState.mCurrentHoldPiece, blockBuffer, bufferWidth, bufferHeight);
+	RenderSingleDisplayPiece(mState->mCurrentHoldPiece, blockBuffer, bufferWidth, bufferHeight);
 }
 
 void
 CTetrisGame::RenderBagPiece(UInt8 index, BlockKind::Type* blockBuffer, UInt8 bufferWidth, UInt8 bufferHeight) {
 	PieceKind::Type piece = PieceKind::None;
 	
-	if(index < mState.mCurrentPieceBagCount) {
-		piece = mState.mPieceBag[index];
+	if(index < mState->mCurrentPieceBagCount) {
+		piece = mState->mPieceBag[index];
 	}
 	
 	RenderSingleDisplayPiece(piece, blockBuffer, bufferWidth, bufferHeight);
@@ -733,22 +743,24 @@ CTetrisGame::RenderBagPiece(UInt8 index, BlockKind::Type* blockBuffer, UInt8 buf
 
 void
 CTetrisGame::ResetState() {
-	mState.~CTetrisGameState();
+	if(mState != NULL) {
+		delete mState;
+		mState = NULL;
+	}
 	
-	// TODO: Pass ruleset into game state constructor?
-	mState = CTetrisGameState();
+	mState = new CTetrisGameState();
 	
-	mState.mLevel = mRuleset.mStartingLevel;
-	mState.mGameOver = FALSE;
+	mState->mLevel = mRuleset->mStartingLevel;
+	mState->mGameOver = FALSE;
 	StartNextTurn();
 }
 
 CTetrisGameState*	
 CTetrisGame::GetState() {
-	return &mState;
+	return mState;
 }
 
 CTetrisGameRuleset*
 CTetrisGame::GetRuleset() {
-	return &mRuleset;
+	return mRuleset;
 }

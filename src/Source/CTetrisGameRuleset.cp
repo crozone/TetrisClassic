@@ -3,6 +3,7 @@
 #include "CTetrisGameRuleset.h"
 
 CTetrisGameRuleset::CTetrisGameRuleset() :
+	mGameMode(TetrisGameMode::Marathon),
 	mScoringSystem(TetrisScoringSystem::OriginalNintendo),
 	mPieceGenerationStrategy(PieceGenerationStrategy::ClassicRandom),
 	mStartingLevel(0),

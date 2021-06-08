@@ -86,9 +86,9 @@ protected:
 				
 				void		ScoreNaturalDrop();
 
-				CTetrisGameState mState;
+				CTetrisGameState* mState;
 				
-				CTetrisGameRuleset mRuleset;
+				CTetrisGameRuleset* mRuleset;
 };
 
 #endif // _H_CTetrisGame

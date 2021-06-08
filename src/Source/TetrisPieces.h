@@ -71,6 +71,9 @@ protected:
 	// Each piece has 4 individual 4x4 bitmaps describing each of its rotations.
 	// Rotations are counter clockwise from 0-3
 	static	const	Boolean	piecesArray[8][4][4][4];
+	
+	// TODO: Different piecesArray for each rotation system
+	//       and modify all of the methods to also take a rotation system variable.
 
 };
 #endif // _H_TetrisPieces

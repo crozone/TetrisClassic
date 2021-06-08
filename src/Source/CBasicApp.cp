@@ -35,6 +35,7 @@
 #include "CTetrisPane.h"
 #include "TetrisMessage.h"
 #include "CTetrisGameRuleset.h"
+#include "TetrisGameMode.h"
 #include "PaneHelpers.h"
 
 // ---------------------------------------------------------------------------
@@ -320,19 +321,43 @@ CBasicApp::ListenToMessage(
 			//
 			// Populate with rules
 			//
-					
+			
+			// Game mode
+			LPopupButton* gameModePopup = dynamic_cast<LPopupButton*>(
+				this->mSetupWindow->FindPaneByID(12) // TODO: Move to constant
+			);
+			ThrowIfNil_(gameModePopup);
+			
+			switch(gameModePopup->GetValue()) {
+				case 1:
+					gameRuleset.mGameMode = TetrisGameMode::Marathon;
+					break;
+				case 2:
+					gameRuleset.mGameMode = TetrisGameMode::Sprint;
+					break;
+				case 3:
+					gameRuleset.mGameMode = TetrisGameMode::Ultra;
+					break;
+				default:
+					Throw_(-1);
+				break;
+			}
+				
+			// Starting level	
 			LSlider* startingLevelSlider = dynamic_cast<LSlider*>(
 				this->mSetupWindow->FindPaneByID(14) // TODO: Move to constant
 			);
 			ThrowIfNil_(startingLevelSlider);
 			gameRuleset.mStartingLevel = startingLevelSlider->GetValue();
 			
+			// Hold piece enabled
 			LCheckBox* holdPieceCheckbox = dynamic_cast<LCheckBox*>(
 				this->mSetupWindow->FindPaneByID(23) // TODO: Move to constant
 			);
 			ThrowIfNil_(holdPieceCheckbox);
 			gameRuleset.mEnableHoldPiece = holdPieceCheckbox->GetValue() ? TRUE : FALSE;
 			
+			// Next pieces lookahead count
 			LSlider* nextPiecesSlider = dynamic_cast<LSlider*>(
 				this->mSetupWindow->FindPaneByID(24) // TODO: Move to constant
 			);
@@ -340,7 +365,7 @@ CBasicApp::ListenToMessage(
 			// TODO: Make game logic actually respect mPieceBagLookahead 
 			gameRuleset.mPieceBagLookahead = nextPiecesSlider->GetValue();
 			
-			// TODO: Rotation System
+			// Rotation System
 			LPopupButton* rotationSystemPopup = dynamic_cast<LPopupButton*>(
 				this->mSetupWindow->FindPaneByID(21) // TODO: Move to constant
 			);
@@ -360,7 +385,7 @@ CBasicApp::ListenToMessage(
 					gameRuleset.mScoringSystem = TetrisScoringSystem::OriginalSega;
 					break;
 				default:
-					Throw_(10); // TODO: Move to constant
+					Throw_(-1);
 				break;
 			}
 			

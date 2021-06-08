@@ -129,8 +129,6 @@ TetrisPieces::StampPieceOntoBoard(
 	UInt8 boardBufferWidth,
 	UInt8 boardBufferHeight) {
 	
-	// TODO: Make board width and height a constant
-	
 	UInt8 pieceIndex = GetPieceIndex(pieceKind);
 	UInt8 orientationIndex = GetOrientationIndex(orientation);
 	BlockKind::Type blockKind = GetBlockFromPiece(pieceKind, collidable, ghost);

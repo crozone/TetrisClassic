@@ -89,9 +89,7 @@ CTetrisGameRunnerAttachment::HandleGameControlMessage(MessageT inMessage, void *
 			// Setup a new game with the given ruleset
 			CTetrisGameRuleset* rulesetPtr = static_cast<CTetrisGameRuleset*>(ioParam);
 			ThrowIfNil_(rulesetPtr);
-
-			CTetrisGameRuleset ruleset = *rulesetPtr;
-			SetupGame(ruleset);
+			SetupGame(*rulesetPtr);
 		break;
 		case msg_TetrisStartGame:
 			// Start game
